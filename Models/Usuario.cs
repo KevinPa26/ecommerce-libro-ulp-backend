@@ -40,15 +40,23 @@ namespace ecommerce_libro_ulp_backend.Models
         // Este campo almacena el hash de la contraseña.
         // No debe mostrarse directamente en las vistas.
         // ver si esto lo trae
+        [Required]
         [StringLength(255)]
+        public string PasswordHash { get; set; } = string.Empty;
+
         [NotMapped]
+        [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
         public EstadoUsuario Activo { get; set; } = EstadoUsuario.ACTIVO;
 
-        public int UsuarioCreador {get; set; }
-        public int UsuarioDelete {get; set; }
+        public DateTime FechaRegistro { get; set; }
+
+        public int? UsuarioCreador { get; set; }
+
+        public int? UsuarioDelete { get; set; }
         public string RolNombre => Rol.ToString();
 
     }
 }
+
