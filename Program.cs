@@ -36,8 +36,8 @@ if (app.Environment.IsDevelopment())
 
         Console.WriteLine(
             conectado
-                ? "OK: conexión con TiDB establecida."
-                : "ERROR: no se pudo conectar con TiDB."
+                ? "OK: conexión con base de datos establecida."
+                : "ERROR: no se pudo conectar con la base de datos."
         );
     }
     catch (Exception ex)
