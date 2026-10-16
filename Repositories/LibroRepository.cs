@@ -11,65 +11,77 @@ public class LibroRepository : ILibroRepository
         _context = context;
     }
 
-    public Libro? ObtenerPorId(int id)
+    public async Task<Libro?> ObtenerPorId(int id)
     {
-        return _context.Libros.Find(id);
+        return await _context.Libros.FindAsync(id);
     }
 
-    public List<Libro> ObtenerTodos()
+    public async Task<List<Libro>> ObtenerTodos()
     {
-        return _context.Libros.ToList();
+        return await _context.Libros.ToListAsync();
     }
 
-    public void Crear(Libro obj)
+    public async Task Crear(Libro obj)
     {
-        _context.Libros.Add(obj);
-        _context.SaveChanges();
+        await _context.Libros.AddAsync(obj);
+        await _context.SaveChangesAsync();
     }
 
-    public void Eliminar(Libro obj)
+    public async Task Eliminar(Libro obj)
     {
         _context.Libros.Remove(obj);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
     }
 
-    public List<Libro> ObtenerPorISBN(string isbn)
+    /* No deberia ser necesario ya que no estamos trabajando con entidades sin trackear.
+     * Cambiar propiedades de entidades trackeadas se hace directo con EF:
+     * T entidad = await _context.T.FindAsync(id);
+     * entidad.nombre = "otro nombre";
+     * await _context.SaveChangesAsync();
+     */ 
+    public async Task Modificar(Libro obj)
     {
-        return _context.Libros
+        _context.Libros.Update(obj);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<Libro>> ObtenerPorISBN(string isbn)
+    {
+        return await _context.Libros
             .Where(l => l.Isbn13 == isbn)
-            .ToList();
+            .ToListAsync();
     }
 
-    public List<Libro> ObtenerPorNombre(string nombre)
+    public async Task<List<Libro>> ObtenerPorNombre(string nombre)
     {
-        return _context.Libros
+        return await _context.Libros
             .Where(l => l.Titulo.Contains(nombre))
-            .ToList();
+            .ToListAsync();
     }
 
-    public List<Libro> ObtenerPorAutor(string autor)
+    public async Task<List<Libro>> ObtenerPorAutor(string autor)
     {
-        return _context.Libros
+        return await _context.Libros
             .Where(l => l.Autor.Contains(autor))
-            .ToList();
+            .ToListAsync();
     }
 
-    public List<Libro> ObtenerPorVendedor(string vendedor)
+    public async Task<List<Libro>> ObtenerPorVendedor(string vendedor)
     {
         if (int.TryParse(vendedor, out int vendedorId))
         {
-            return _context.Libros
+            return await _context.Libros
                 .Where(l => l.VendedorId == vendedorId)
-                .ToList();
+                .ToListAsync();
         }
 
         return new List<Libro>();
     }
 
-    public List<Libro> ObtenerPorRangoDePrecios(decimal min, decimal max)
+    public async Task<List<Libro>> ObtenerPorRangoDePrecios(decimal min, decimal max)
     {
-        return _context.Libros
+        return await _context.Libros
             .Where(l => l.Precio >= min && l.Precio <= max)
-            .ToList();
+            .ToListAsync();
     }
 }
