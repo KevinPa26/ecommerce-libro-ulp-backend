@@ -1,7 +1,8 @@
 public interface IRepository<T> where T : class
 {
-	abstract T? ObtenerPorId(int id);
-	abstract List<T> ObtenerTodos();
-	abstract void Crear(T obj);
-	abstract void Eliminar(T obj);
+	abstract Task<T?> ObtenerPorId(int id);
+	abstract Task<List<T>> ObtenerTodos();
+	abstract Task Crear(T obj);
+	abstract Task Eliminar(T obj);
+	abstract Task Modificar(T obj);
 }
