@@ -8,6 +8,7 @@ builder.Services.AddControllersWithViews();
 // builder.Services.AddHttpContextAccessor();//Para recuperar el user entre otros datos
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ILibroRepository, LibroRepository>();
+builder.Services.AddScoped<ICarritoRepository, CarritoRepository>();
 
 var connectionString = builder.Configuration
     .GetConnectionString("DefaultConnection");
