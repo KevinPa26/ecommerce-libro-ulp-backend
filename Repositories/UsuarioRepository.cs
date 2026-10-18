@@ -34,7 +34,7 @@ public class UsuarioRepository : IUsuarioRepository
 		// Usamos FirstAsync, dado que email en la base de datos esta marcado como UNIQUE
 		return await _context.Usuarios
 			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Email.Contains(email))
-			.FirstAsync();
+			.FirstOrDefaultAsync();
 	}
 
 	public async Task<List<Usuario>> ObtenerPorEstado(EstadoUsuario estado)
@@ -46,9 +46,7 @@ public class UsuarioRepository : IUsuarioRepository
 
 	public async Task<Usuario?> ObtenerPorId(int id)
 	{
-		return await _context.Usuarios
-			.Where(u => u.Id.Equals(id))
-			.FirstAsync();
+		return await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
 	}
 
 	public async Task<List<Usuario>> ObtenerPorNombre(string nombre)
