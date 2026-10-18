@@ -9,6 +9,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ILibroRepository, LibroRepository>();
 builder.Services.AddScoped<ICarritoRepository, CarritoRepository>();
+builder.Services.AddScoped<IFavoritoRepository, FavoritoRepository>();
 
 var connectionString = builder.Configuration
     .GetConnectionString("DefaultConnection");
