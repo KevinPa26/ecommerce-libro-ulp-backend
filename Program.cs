@@ -5,6 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+// builder.Services.AddHttpContextAccessor();//Para recuperar el user entre otros datos
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<ILibroRepository, LibroRepository>();
 
 var connectionString = builder.Configuration
     .GetConnectionString("DefaultConnection");
