@@ -40,7 +40,6 @@ namespace ecommerce_libro_ulp_backend.Models
         // Este campo almacena el hash de la contraseña.
         // No debe mostrarse directamente en las vistas.
         // ver si esto lo trae
-        [Required]
         [StringLength(255)]
         public string PasswordHash { get; set; } = string.Empty;
 

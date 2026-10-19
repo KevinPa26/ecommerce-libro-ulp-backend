@@ -20,6 +20,9 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "No se encontró la cadena de conexión DefaultConnection.");
 }
 
+//para conectar con url en appsetting
+//builder.Configuration["ConnectionStrings:MySqlConnectionString"]
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,

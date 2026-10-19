@@ -1,0 +1,179 @@
+@model ecommerce_libro_ulp_backend.Models.Usuario
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<div id="app" class="container mt-4">
+    <!-- Breadcrumb y Título -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Usuarios</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Crear</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-person-plus-fill"></i> Crear Nuevo Usuario
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-card-heading"></i> Formulario de Registro</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Crear" method="post" enctype="multipart/form-data" @@submit="validarFormulario">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <div class="row g-3">
+                            <!-- Nombre -->
+                            <div class="col-md-6">
+                                <label asp-for="Nombre" class="form-label fw-bold">Nombre Completo *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input asp-for="Nombre" v-model="form.nombre" class="form-control" placeholder="Ej: Juan Pérez" required />
+                                </div>
+                                <span asp-validation-for="Nombre" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold">Correo Electrónico *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input asp-for="Email" type="email" v-model="form.email" class="form-control" placeholder="usuario@ejemplo.com" required />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label fw-bold">Contraseña *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input asp-for="Password" :type="mostrarPassword ? 'text' : 'password'" v-model="form.password" class="form-control" placeholder="••••••••" required />
+                                    <button type="button" class="btn btn-outline-secondary" @@click="mostrarPassword = !mostrarPassword">
+                                        <i :class="mostrarPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Rol -->
+                            <div class="col-md-6">
+                                <label asp-for="Rol" class="form-label fw-bold">Rol de Usuario *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                    <select asp-for="Rol" v-model="form.rol" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.RolUsuario>()">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Rol" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Estado (Activo) -->
+                            <div class="col-md-6">
+                                <label asp-for="Activo" class="form-label fw-bold">Estado Inicial *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
+                                    <select asp-for="Activo" v-model="form.activo" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoUsuario>()">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Activo" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Subida de Imagen Avatar -->
+                            <div class="col-md-6">
+                                <label for="archivoAvatar" class="form-label fw-bold">Imagen de Avatar (Opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-image"></i></span>
+                                    <input type="file" id="archivoAvatar" name="archivoAvatar" class="form-control" accept=".jpg, .jpeg, .png, .webp" @@change="onFileChange" />
+                                </div>
+                                <small class="text-muted d-block">Formatos: JPG, PNG, WEBP. Máximo 2MB.</small>
+                                <span asp-validation-for="Avatar" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Vista previa del Avatar -->
+                            <div class="col-12 text-center my-2" v-if="avatarPreview">
+                                <span class="d-block small text-muted mb-1">Vista previa del avatar seleccionado:</span>
+                                <img :src="avatarPreview" alt="Vista previa del avatar" class="rounded-circle img-thumbnail shadow-sm" style="width: 90px; height: 90px; object-fit: cover;" @@error="avatarError" />
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Listado
+                            </a>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check-circle"></i> Guardar Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                mostrarPassword: false,
+                avatarPreview: null,
+                form: {
+                    nombre: '',
+                    email: '',
+                    password: '',
+                    rol: '0',    // Corresponde a RolUsuario
+                    activo: '0'  // Corresponde a EstadoUsuario
+                }
+            }
+        },
+        methods: {
+            onFileChange(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validar tamaño máximo en cliente (2 MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('El archivo seleccionado supera el límite de 2 MB.');
+                        e.target.value = '';
+                        this.avatarPreview = null;
+                        return;
+                    }
+
+                    // Generar la vista previa local de la imagen seleccionada
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        this.avatarPreview = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.avatarPreview = null;
+                }
+            },
+            validarFormulario(e) {
+                if (!this.form.nombre || !this.form.email || !this.form.password) {
+                    e.preventDefault();
+                    alert('Por favor completa todos los campos obligatorios.');
+                }
+            },
+            avatarError(e) {
+                e.target.src = 'https://via.placeholder.com/90?text=Sin+Imagen';
+            }
+        }
+    }).mount('#app');
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

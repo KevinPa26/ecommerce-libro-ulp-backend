@@ -1,0 +1,126 @@
+@model ecommerce_libro_ulp_backend.Models.Usuario
+
+@{
+    ViewData["Title"] = "Detalles del Usuario";
+}
+
+<div id="app" class="container mt-4">
+    <!-- Breadcrumb y Título -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Usuarios</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Detalles</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-person-badge"></i> Detalles del Usuario
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="bi bi-info-circle"></i> Información General</h5>
+                    <span class="badge bg-light text-dark fw-bold">ID: @Model.Id</span>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-4">
+                        <!-- Sección Avatar cargado desde la URL del Controlador -->
+                        <div class="col-md-4 text-center border-end">
+                            <div class="position-relative d-inline-block">
+                                <img :src="avatarUrl" 
+                                     alt="Avatar de @Model.Nombre" 
+                                     class="rounded-circle img-thumbnail shadow-sm mb-2" 
+                                     style="width: 130px; height: 130px; object-fit: cover;"
+                                     @@error="onAvatarError" />
+                                <div v-if="cargandoAvatar" class="spinner-border spinner-border-sm text-primary position-absolute top-50 start-50 translate-middle" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                            <h5 class="fw-bold mt-2 mb-0">@Model.Nombre</h5>
+                            <small class="text-muted">@Model.Email</small>
+                        </div>
+
+                        <!-- Información Principal -->
+                        <div class="col-md-8 ps-md-4 mt-3 mt-md-0">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="text-muted small d-block">Rol de Usuario</label>
+                                    <span class="badge bg-secondary fs-6">@Model.Rol</span>
+                                </div>
+
+                                <div class="col-6">
+                                    <label class="text-muted small d-block">Estado de la Cuenta</label>
+                                    @if (Model.Activo == ecommerce_libro_ulp_backend.Models.EstadoUsuario.ACTIVO)
+                                    {
+                                        <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Activo</span>
+                                    }
+                                    else if (Model.Activo == ecommerce_libro_ulp_backend.Models.EstadoUsuario.INACTIVO)
+                                    {
+                                        <span class="badge bg-warning text-dark fs-6"><i class="bi bi-dash-circle"></i> Inactivo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger fs-6"><i class="bi bi-slash-circle"></i> Suspendido</span>
+                                    }
+                                </div>
+
+                                <div class="col-12">
+                                    <hr class="my-2" />
+                                </div>
+
+                                <div class="col-6">
+                                    <label class="text-muted small d-block"><i class="bi bi-calendar-event"></i> Fecha de Registro</label>
+                                    <span class="fw-semibold">@Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+
+                                <div class="col-6">
+                                    <label class="text-muted small d-block"><i class="bi bi-person-plus"></i> Creado Por (ID)</label>
+                                    <span class="fw-semibold">@(Model.UsuarioCreador.HasValue ? Model.UsuarioCreador.Value.ToString() : "Sistema / Registro Directo")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Botones de Acción -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Listado
+                        </a>
+                        <div>
+                            <a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+                                <i class="bi bi-pencil-square"></i> Editar Usuario
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                usuarioId: @Model.Id,
+                avatarUrl: `/Usuarios/Avatar/${@Model.Id}`,
+                cargandoAvatar: false
+            }
+        },
+        methods: {
+            onAvatarError(e) {
+                // Si la ruta falla o el servidor responde con 404, mostramos un placeholder por defecto
+                e.target.src = 'https://via.placeholder.com/130?text=Sin+Avatar';
+            }
+        }
+    }).mount('#app');
+</script>
