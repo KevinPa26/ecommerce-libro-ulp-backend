@@ -19,14 +19,30 @@ public class UsuarioRepository : IUsuarioRepository
 
 	public async Task Eliminar(Usuario obj)
 	{
-		_context.Usuarios.Remove(obj);
-		await _context.SaveChangesAsync();
+		if (obj != null)
+		{
+			obj.Activo = EstadoUsuario.INACTIVO;
+			await _context.SaveChangesAsync();
+		}
 	}
 
-	public async Task Modificar(Usuario obj)
+	public async Task Modificar(Usuario usuario)
 	{
-		_context.Usuarios.Update(obj);
-		await _context.SaveChangesAsync();
+		// Buscamos la entidad existente directamente en este contexto para evitar conflictos de tracking
+		var usuarioDb = await _context.Usuarios.FindAsync(usuario.Id);
+
+		if (usuarioDb != null)
+		{
+			usuarioDb.Nombre = usuario.Nombre;
+			usuarioDb.Email = usuario.Email;
+			usuarioDb.Rol = usuario.Rol;
+			usuarioDb.Activo = usuario.Activo;
+			usuarioDb.Avatar = usuario.Avatar;
+			usuarioDb.PasswordHash = usuario.PasswordHash;
+			// La FechaRegistro no hace falta tocarla porque se preserva intacta
+
+			await _context.SaveChangesAsync();
+		}
 	}
 
 	public async Task<Usuario?> ObtenerPorEmail(string email)
@@ -66,5 +82,15 @@ public class UsuarioRepository : IUsuarioRepository
 	public async Task<List<Usuario>> ObtenerTodos()
 	{
 		return await _context.Usuarios.ToListAsync();
+	}
+
+	public async Task<string?> ObtenerAvatarPorId(int id)
+	{
+		var usuario = await _context.Usuarios
+			.Where(u => u.Id == id)
+			.Select(u => u.Avatar)
+			.FirstOrDefaultAsync();
+
+		return usuario;
 	}
 }

@@ -28,7 +28,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row align-items-center mb-4">
-                        <!-- Sección Avatar cargado desde la URL del Controlador -->
+                        <!-- Sección Avatar cargado desde el endpoint del controlador -->
                         <div class="col-md-4 text-center border-end">
                             <div class="position-relative d-inline-block">
                                 <img :src="avatarUrl" 
@@ -36,9 +36,6 @@
                                      class="rounded-circle img-thumbnail shadow-sm mb-2" 
                                      style="width: 130px; height: 130px; object-fit: cover;"
                                      @@error="onAvatarError" />
-                                <div v-if="cargandoAvatar" class="spinner-border spinner-border-sm text-primary position-absolute top-50 start-50 translate-middle" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
-                                </div>
                             </div>
                             <h5 class="fw-bold mt-2 mb-0">@Model.Nombre</h5>
                             <small class="text-muted">@Model.Email</small>
@@ -112,13 +109,12 @@
         data() {
             return {
                 usuarioId: @Model.Id,
-                avatarUrl: `/Usuarios/Avatar/${@Model.Id}`,
-                cargandoAvatar: false
+                avatarUrl: `/Usuarios/Avatar/${@Model.Id}`
             }
         },
         methods: {
             onAvatarError(e) {
-                // Si la ruta falla o el servidor responde con 404, mostramos un placeholder por defecto
+                // Si la imagen falla al cargar, muestra un placeholder por defecto
                 e.target.src = 'https://via.placeholder.com/130?text=Sin+Avatar';
             }
         }

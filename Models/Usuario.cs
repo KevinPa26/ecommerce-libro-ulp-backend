@@ -45,7 +45,7 @@ namespace ecommerce_libro_ulp_backend.Models
 
         [NotMapped]
         [DataType(DataType.Password)]
-        public string Password { get; set; } = string.Empty;
+        public string? Password { get; set; } = string.Empty;
 
         public EstadoUsuario Activo { get; set; } = EstadoUsuario.ACTIVO;
 

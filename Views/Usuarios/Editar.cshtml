@@ -1,0 +1,187 @@
+@model ecommerce_libro_ulp_backend.Models.Usuario
+
+@{
+    ViewData["Title"] = "Editar Usuario";
+}
+
+<div id="app" class="container mt-4">
+    <!-- Breadcrumb y Título -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Usuarios</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-pencil-square"></i> Editar Usuario
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-card-heading"></i> Modificar Datos del Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario con enctype para soportar subida de archivos -->
+                    <form asp-action="Editar" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" @@submit="validarFormulario">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                        
+                        <!-- Campo oculto para mantener el Id -->
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row g-3">
+                            <!-- Nombre -->
+                            <div class="col-md-6">
+                                <label asp-for="Nombre" class="form-label fw-bold">Nombre Completo *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input asp-for="Nombre" v-model="form.nombre" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Nombre" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold">Correo Electrónico *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input asp-for="Email" type="email" v-model="form.email" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Password (Opcional en edición) -->
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label fw-bold">Nueva Contraseña (Opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input asp-for="Password" :type="mostrarPassword ? 'text' : 'password'" v-model="form.password" class="form-control" placeholder="Dejar en blanco para mantener la actual" />
+                                    <button type="button" class="btn btn-outline-secondary" @@click="mostrarPassword = !mostrarPassword">
+                                        <i :class="mostrarPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Si no deseas cambiarla, no escribas nada.</small>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Rol -->
+                            <div class="col-md-6">
+                                <label asp-for="Rol" class="form-label fw-bold">Rol de Usuario *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                    <select asp-for="Rol" v-model="form.rol" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.RolUsuario>()">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Rol" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Estado (Activo) -->
+                            <div class="col-md-6">
+                                <label asp-for="Activo" class="form-label fw-bold">Estado de la Cuenta *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
+                                    <select asp-for="Activo" v-model="form.activo" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoUsuario>()">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Activo" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Subida de Nuevo Avatar -->
+                            <div class="col-md-6">
+                                <label for="archivoAvatar" class="form-label fw-bold">Cambiar Imagen de Avatar</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-image"></i></span>
+                                    <input type="file" id="archivoAvatar" name="archivoAvatar" class="form-control" accept=".jpg, .jpeg, .png, .webp" @@change="onFileChange" />
+                                </div>
+                                <small class="text-muted d-block">Formatos permitidos: JPG, PNG, WEBP. Máximo 2MB.</small>
+                                <span asp-validation-for="Avatar" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Visualización del Avatar (Actual vs Vista Previa Nueva) -->
+                            <div class="col-12 text-center my-3">
+                                <span class="d-block small text-muted mb-2">Avatar actual / Vista previa:</span>
+                                <div class="position-relative d-inline-block">
+                                    <img :src="avatarPreview || avatarActualUrl" alt="Avatar" class="rounded-circle img-thumbnail shadow-sm" style="width: 100px; height: 100px; object-fit: cover;" @@error="avatarError" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Listado
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                mostrarPassword: false,
+                avatarActualUrl: `/Usuarios/Avatar/${@Model.Id}`,
+                avatarPreview: null,
+                form: {
+                    nombre: '@Model.Nombre',
+                    email: '@Model.Email',
+                    password: '',
+                    rol: '@((int)Model.Rol)',
+                    activo: '@((int)Model.Activo)'
+                }
+            }
+        },
+        methods: {
+            onFileChange(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validar tamaño máximo (2 MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('El archivo seleccionado supera el límite de 2 MB.');
+                        e.target.value = '';
+                        this.avatarPreview = null;
+                        return;
+                    }
+
+                    // Generar vista previa con FileReader
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        this.avatarPreview = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.avatarPreview = null;
+                }
+            },
+            validarFormulario(e) {
+                if (!this.form.nombre || !this.form.email) {
+                    e.preventDefault();
+                    alert('Por favor completa los campos obligatorios (Nombre y Email).');
+                }
+            },
+            avatarError(e) {
+                e.target.src = 'https://via.placeholder.com/100?text=Sin+Avatar';
+            }
+        }
+    }).mount('#app');
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

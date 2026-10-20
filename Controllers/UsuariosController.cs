@@ -250,6 +250,44 @@ namespace ecommerce_libro_ulp_backend.Controllers
             }
         }
 
+        // GET: Usuarios/Avatar/5
+        [HttpGet("Usuarios/Avatar/{id}")]
+        public async Task<IActionResult> Avatar(int id)
+        {
+            // Llamamos a la función dedicada de nuestro repositorio
+            string? rutaAvatar = await _usuarioRepository.ObtenerAvatarPorId(id);
+
+            if (!string.IsNullOrEmpty(rutaAvatar))
+            {
+                // Limpiamos la barra inicial si existe para combinar correctamente en wwwroot
+                string rutaRelativa = rutaAvatar.TrimStart('/');
+                string rutaFisica = Path.Combine(_webHostEnvironment.WebRootPath, rutaRelativa);
+
+                if (System.IO.File.Exists(rutaFisica))
+                {
+                    var extension = Path.GetExtension(rutaFisica).ToLowerInvariant();
+                    string contentType = extension switch
+                    {
+                        ".png" => "image/png",
+                        ".webp" => "image/webp",
+                        ".svg" => "image/svg+xml",
+                        _ => "image/jpeg"
+                    };
+
+                    return PhysicalFile(rutaFisica, contentType);
+                }
+            }
+
+            // Si no tiene avatar asignado o el archivo físico no se encuentra, retornamos un placeholder por defecto
+            string placeholderPath = Path.Combine(_webHostEnvironment.ContentRootPath, "images", "default-avatar.svg");
+            if (System.IO.File.Exists(placeholderPath))
+            {
+                return PhysicalFile(placeholderPath, "image/svg+xml");
+            }
+
+            return NotFound();
+        }
+
         // =========================================================================
         // MÉTODO AUXILIAR REUTILIZABLE PARA VALIDAR Y GUARDAR EL AVATAR
         // =========================================================================

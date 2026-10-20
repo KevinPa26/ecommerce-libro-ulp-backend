@@ -11,21 +11,21 @@ builder.Services.AddScoped<ILibroRepository, LibroRepository>();
 builder.Services.AddScoped<ICarritoRepository, CarritoRepository>();
 builder.Services.AddScoped<IFavoritoRepository, FavoritoRepository>();
 
-var connectionString = builder.Configuration
-    .GetConnectionString("DefaultConnection");
+// var connectionString = builder.Configuration
+//     .GetConnectionString("DefaultConnection");
 
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException(
-        "No se encontró la cadena de conexión DefaultConnection.");
-}
+// if (string.IsNullOrWhiteSpace(connectionString))
+// {
+//     throw new InvalidOperationException(
+//         "No se encontró la cadena de conexión DefaultConnection.");
+// }
 
 //para conectar con url en appsetting
 //builder.Configuration["ConnectionStrings:MySqlConnectionString"]
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
-        connectionString,
+        builder.Configuration["ConnectionStrings:MySqlConnectionString"],
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );

@@ -6,5 +6,6 @@ public interface IUsuarioRepository : IRepository<Usuario>
 	abstract Task<List<Usuario>> ObtenerPorEstado(EstadoUsuario estado);
 	abstract Task<List<Usuario>> ObtenerPorRol(RolUsuario rol);
 	abstract Task<Usuario?> ObtenerPorEmail(string email);
+	abstract Task<string?> ObtenerAvatarPorId(int id);
 
 }

@@ -1,0 +1,109 @@
+@model ecommerce_libro_ulp_backend.Models.Usuario
+
+@{
+    ViewData["Title"] = "Eliminar Usuario";
+}
+
+<div id="app" class="container mt-4">
+    <!-- Breadcrumb y Título -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Usuarios</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i> Eliminar Usuario
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-exclamation"></i> ¿Estás seguro de que deseas eliminar este usuario?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-info-circle-fill"></i> Esta acción no se puede deshacer. Se eliminarán los datos del sistema de forma permanente.
+                    </div>
+
+                    <div class="row align-items-center mb-4">
+                        <!-- Avatar del usuario -->
+                        <div class="col-md-4 text-center border-end">
+                            <div class="position-relative d-inline-block">
+                                <img :src="avatarUrl" 
+                                     alt="Avatar de @Model.Nombre" 
+                                     class="rounded-circle img-thumbnail shadow-sm mb-2" 
+                                     style="width: 120px; height: 120px; object-fit: cover;"
+                                     @@error="onAvatarError" />
+                            </div>
+                            <h5 class="fw-bold mt-2 mb-0">@Model.Nombre</h5>
+                            <small class="text-muted">@Model.Email</small>
+                        </div>
+
+                        <!-- Detalles del usuario a eliminar -->
+                        <div class="col-md-8 ps-md-4 mt-3 mt-md-0">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <strong class="text-muted">ID de Usuario:</strong> 
+                                    <span class="badge bg-secondary">@Model.Id</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong class="text-muted">Rol:</strong> 
+                                    <span>@Model.Rol</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong class="text-muted">Estado:</strong> 
+                                    <span>@Model.Activo</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong class="text-muted">Fecha de Registro:</strong> 
+                                    <span>@Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Formulario de confirmación POST -->
+                    <form asp-action="Eliminar" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar y Volver
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="bi bi-trash-fill"></i> Sí, Eliminar Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                avatarUrl: `/Usuarios/Avatar/${@Model.Id}`
+            }
+        },
+        methods: {
+            onAvatarError(e) {
+                e.target.src = 'https://via.placeholder.com/120?text=Sin+Avatar';
+            }
+        }
+    }).mount('#app');
+</script>
