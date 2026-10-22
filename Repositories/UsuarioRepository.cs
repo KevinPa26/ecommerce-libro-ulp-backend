@@ -68,20 +68,22 @@ public class UsuarioRepository : IUsuarioRepository
 	public async Task<List<Usuario>> ObtenerPorNombre(string nombre)
 	{
 		return await _context.Usuarios
-			.Where(u => u.Nombre.Contains(nombre))
+			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Nombre.Contains(nombre))
 			.ToListAsync();
 	}
 
 	public async Task<List<Usuario>> ObtenerPorRol(RolUsuario rol)
 	{
 		return await _context.Usuarios
-			.Where(u => u.Rol.Equals(rol))
+			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Rol.Equals(rol))
 			.ToListAsync();
 	}
 
 	public async Task<List<Usuario>> ObtenerTodos()
 	{
-		return await _context.Usuarios.ToListAsync();
+		return await _context.Usuarios
+			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO))
+			.ToListAsync();
 	}
 
 	public async Task<string?> ObtenerAvatarPorId(int id)
