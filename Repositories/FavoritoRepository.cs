@@ -18,7 +18,10 @@ public class FavoritoRepository : IFavoritoRepository
 
 	public async Task<List<Favorito>> ObtenerTodos()
 	{
-		return await _context.Favoritos.ToListAsync();
+		return await _context.Favoritos
+			.Include(f => f.Libro)
+			.Include(f => f.Usuario)
+			.ToListAsync();
 	}
 
 	public async Task Crear(Favorito obj)
@@ -43,13 +46,13 @@ public class FavoritoRepository : IFavoritoRepository
 	{
 		return await _context.Favoritos
 			.Where(f => f.UsuarioId.Equals(id))
+			.Include(f => f.Libro)
+			.Include(f => f.Usuario)
 			.ToListAsync();
 	}
 
 	public async Task<List<Favorito>> ObtenerPorUsuario(Usuario usuario)
 	{
-		return await _context.Favoritos
-			.Where(f => f.UsuarioId.Equals(usuario.Id))
-			.ToListAsync();
+		return await ObtenerPorUsuarioId(usuario.Id);
 	}
 }
