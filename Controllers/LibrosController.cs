@@ -6,11 +6,15 @@ namespace ecommerce_libro_ulp_backend.Controllers
     public class LibrosController : Controller
     {
         private readonly ILibroRepository _libroRepository;
+        private readonly IImagenLibroRepository _imagenLibroRepository;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ILogger<LibrosController> _logger;
 
-        public LibrosController(ILibroRepository libroRepository, ILogger<LibrosController> logger)
+        public LibrosController(ILibroRepository libroRepository, IImagenLibroRepository imagenLibroRepository, IWebHostEnvironment webHostEnvironment, ILogger<LibrosController> logger)
         {
             _libroRepository = libroRepository;
+            _imagenLibroRepository = imagenLibroRepository;
+            _webHostEnvironment = webHostEnvironment;
             _logger = logger;
         }
 
@@ -75,23 +79,75 @@ namespace ecommerce_libro_ulp_backend.Controllers
         // POST: Libros/Crear
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(Libro libro)
+        public async Task<IActionResult> Crear(Libro libro, List<IFormFile> archivosFotos)
         {
+            // 1. Obtener el ID del usuario logueado actual desde los claims
+            // var usuarioIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            // if (int.TryParse(usuarioIdString, out int vendedorIdLogueado))
+            // {
+                libro.VendedorId = 1;
+                libro.UsuarioCreador = 1;
+                libro.Estado = EstadoLibro.DISPONIBLE;
+            // }
+            // else
+            // {
+            //     // Si no hay sesión válida, redirigir al login o devolver error de autenticación
+            //     return Challenge(); 
+            // }
+
+            // Limpiamos la validación del ModelState para VendedorId y UsuarioCreador ya que vienen del sistema
+            // ModelState.Remove(nameof(libro.VendedorId));
+            // ModelState.Remove(nameof(libro.UsuarioCreador));
+
+            // 2. Validar la cantidad de fotos (Mínimo 1, Máximo 4)
+            if (archivosFotos == null || archivosFotos.Count < 1 || archivosFotos.Count > 4)
+            {
+                ModelState.AddModelError("Fotos", "Debes subir obligatoriamente entre 1 y 4 fotografías del libro.");
+            }
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    await _libroRepository.Crear(libro);
-                    _logger.LogInformation("Libro '{Titulo}' creado exitosamente.", libro.Titulo);
+                    // 3. Guardar el libro primero en el repositorio para que se genere su ID
+                    await _libroRepository.Crear(libro); 
+                    // Nota: Asegúrate de que tu método CrearAsync en el repositorio asigne el ID al objeto `libro` (o guarde los cambios y devuelva el objeto con el ID poblado).
+
+                    // 4. Procesar y guardar las imágenes asociadas
+                    for (int i = 0; i < archivosFotos.Count; i++)
+                    {
+                        var archivo = archivosFotos[i];
+                        if (archivo != null && archivo.Length > 0)
+                        {
+                            // Llamamos a tu método auxiliar para guardar el archivo en disco (ej: wwwroot/uploads/libros/)
+                            // y que te devuelva la ruta relativa (ej: "/uploads/libros/1/foto_abc.jpg")
+                            var rutaRelativa = await GuardarArchivoLibroAsync(archivo, libro.Id);
+
+                            var imagenLibro = new ImagenLibro
+                            {
+                                LibroId = libro.Id,
+                                Path = rutaRelativa,
+                                // LA MAGIA AQUí: La primera imagen (índice 0) es la principal
+                                EsPrincipal = (i == 0) 
+                            };
+
+                            // Guardamos la imagen en la base de datos a través de su respectivo repositorio o contexto
+                            await _imagenLibroRepository.Crear(imagenLibro);
+                        }
+                    }
+
+                    _logger.LogInformation("Libro con ID {Id} creado exitosamente con {Count} imágenes.", libro.Id, archivosFotos.Count);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al intentar crear un nuevo libro.");
-                    ModelState.AddModelError("", "No se pudo guardar el libro. Inténtelo nuevamente.");
+                    _logger.LogError(ex, "Error al crear el libro y sus imágenes asociadas.");
+                    ModelState.AddModelError("", "Ocurrió un error inesperado al intentar registrar el libro.");
                 }
             }
 
+            // Si el ModelState falla o hay excepciones, recargamos la vista con el modelo actual
             return View(libro);
         }
 
@@ -168,6 +224,30 @@ namespace ecommerce_libro_ulp_backend.Controllers
                 _logger.LogError(ex, "Error al eliminar el libro con ID {LibroId}.", id);
                 return View("Error");
             }
+        }
+
+        private async Task<string> GuardarArchivoLibroAsync(IFormFile archivo, int libroId)
+        {
+            // Definimos la carpeta destino organizada por ID de libro dentro de wwwroot/uploads/libros
+            string carpetaUploads = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "libros", libroId.ToString());
+
+            if (!Directory.Exists(carpetaUploads))
+            {
+                Directory.CreateDirectory(carpetaUploads);
+            }
+
+            // Generamos un nombre único para evitar colisiones
+            string extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            string nombreUnico = $"{Guid.NewGuid()}{extension}";
+            string rutaFisicaCompleta = Path.Combine(carpetaUploads, nombreUnico);
+
+            using (var stream = new FileStream(rutaFisicaCompleta, FileMode.Create))
+            {
+                await archivo.CopyToAsync(stream);
+            }
+
+            // Retornamos la ruta relativa para guardarla en la base de datos
+            return $"/uploads/libros/{libroId}/{nombreUnico}";
         }
     }
 }
