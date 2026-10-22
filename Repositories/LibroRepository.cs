@@ -18,7 +18,9 @@ public class LibroRepository : ILibroRepository
 
     public async Task<List<Libro>> ObtenerTodos()
     {
-        return await _context.Libros.ToListAsync();
+        return await _context.Libros
+            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO))
+            .ToListAsync();
     }
 
     public async Task Crear(Libro obj)
@@ -29,8 +31,11 @@ public class LibroRepository : ILibroRepository
 
     public async Task Eliminar(Libro obj)
     {
-        _context.Libros.Remove(obj);
-        await _context.SaveChangesAsync();
+        if (obj != null)
+        {
+            obj.Estado = EstadoLibro.INACTIVO;
+            await _context.SaveChangesAsync();
+        }
     }
 
     /* No deberia ser necesario ya que no estamos trabajando con entidades sin trackear.
@@ -48,21 +53,21 @@ public class LibroRepository : ILibroRepository
     public async Task<List<Libro>> ObtenerPorISBN(string isbn)
     {
         return await _context.Libros
-            .Where(l => l.Isbn13 == isbn)
+            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Isbn13 == isbn)
             .ToListAsync();
     }
 
     public async Task<List<Libro>> ObtenerPorNombre(string nombre)
     {
         return await _context.Libros
-            .Where(l => l.Titulo.Contains(nombre))
+            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Titulo.Contains(nombre))
             .ToListAsync();
     }
 
     public async Task<List<Libro>> ObtenerPorAutor(string autor)
     {
         return await _context.Libros
-            .Where(l => l.Autor.Contains(autor))
+            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Autor.Contains(autor))
             .ToListAsync();
     }
 
@@ -71,7 +76,7 @@ public class LibroRepository : ILibroRepository
         if (int.TryParse(vendedor, out int vendedorId))
         {
             return await _context.Libros
-                .Where(l => l.VendedorId == vendedorId)
+                .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.VendedorId == vendedorId)
                 .ToListAsync();
         }
 
@@ -81,7 +86,7 @@ public class LibroRepository : ILibroRepository
     public async Task<List<Libro>> ObtenerPorRangoDePrecios(decimal min, decimal max)
     {
         return await _context.Libros
-            .Where(l => l.Precio >= min && l.Precio <= max)
+            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Precio >= min && l.Precio <= max)
             .ToListAsync();
     }
 }
