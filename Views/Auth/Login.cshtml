@@ -1,0 +1,109 @@
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-book-half fs-1 text-primary"></i>
+                        <h1 class="h3 mt-3">Bienvenido de nuevo</h1>
+                        <p class="text-secondary mb-0">
+                            Ingresá a tu cuenta de la librería.
+                        </p>
+                    </div>
+
+                    <div id="mensaje" class="alert d-none" role="alert"></div>
+
+                    <form id="formLogin">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input id="email" name="email"
+                                   type="email" class="form-control"
+                                   autocomplete="username"
+                                   maxlength="150" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Contraseña
+                            </label>
+                            <input id="password" name="password"
+                                   type="password" class="form-control"
+                                   autocomplete="current-password"
+                                   required />
+                        </div>
+
+                        <button id="btnLogin" type="submit"
+                                class="btn btn-primary w-100">
+                            Iniciar sesión
+                        </button>
+                    </form>
+
+                    <p class="text-center mt-4 mb-0">
+                        ¿Todavía no tenés cuenta?
+                        <a asp-controller="Auth" asp-action="Registro">
+                            Registrate
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const form = document.getElementById("formLogin");
+    const mensaje = document.getElementById("mensaje");
+    const boton = document.getElementById("btnLogin");
+
+    function mostrarMensaje(texto, tipo = "danger") {
+        mensaje.textContent = texto;
+        mensaje.className = `alert alert-${tipo}`;
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        mensaje.className = "alert d-none";
+        boton.disabled = true;
+        boton.textContent = "Ingresando...";
+
+        try {
+            const respuesta = await fetch("/api/account/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("email").value.trim(),
+                    password: document.getElementById("password").value
+                })
+            });
+
+            const data = await respuesta.json();
+
+            if (!respuesta.ok) {
+                mostrarMensaje(data.mensaje || "No se pudo iniciar sesión.");
+                return;
+            }
+
+            if (!data.token) {
+                mostrarMensaje("El servidor no devolvió un token válido.");
+                return;
+            }
+
+            sessionStorage.setItem("jwt", data.token);
+            window.location.assign("/Auth/Perfil");
+        } catch {
+            mostrarMensaje("No se pudo conectar con el servidor.");
+        } finally {
+            boton.disabled = false;
+            boton.textContent = "Iniciar sesión";
+        }
+    });
+})();
+</script>
+}

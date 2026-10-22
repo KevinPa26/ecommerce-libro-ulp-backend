@@ -1,61 +1,249 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ecommerce_libro_ulp_backend</title>
+
     <script type="importmap"></script>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ecommerce_libro_ulp_backend.styles.css" asp-append-version="true" />
 
-    @* ICONOS *@
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" ... />
-
-    @* VUE *@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        .main-navbar {
+            background: linear-gradient(110deg, #171923, #252b3a);
+            border-bottom: 1px solid rgba(255, 255, 255, .09);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .12);
+        }
+
+        .main-navbar .navbar-brand {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -.4px;
+        }
+
+        .main-navbar .navbar-brand i {
+            color: #8b9cff;
+        }
+
+        .main-navbar .nav-link {
+            color: #cbd0dc;
+            padding: .6rem .85rem;
+            border-radius: .55rem;
+            transition: background-color .2s, color .2s;
+        }
+
+        .main-navbar .nav-link:hover,
+        .main-navbar .nav-link:focus {
+            color: #fff;
+            background: rgba(255, 255, 255, .09);
+        }
+
+        .main-navbar .nav-link i {
+            margin-right: .35rem;
+        }
+
+        .main-navbar .navbar-toggler {
+            border-color: rgba(255, 255, 255, .25);
+        }
+
+        .main-navbar .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+        .nav-action {
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: .55rem;
+            padding: .5rem .85rem !important;
+        }
+
+        .nav-register {
+            background: #6678e8;
+            color: #fff !important;
+            border-radius: .55rem;
+            padding: .5rem .85rem !important;
+        }
+
+        .nav-register:hover {
+            background: #5365d2 !important;
+        }
+
+        .nav-admin {
+            color: #f5d58a !important;
+        }
+
+        .nav-admin:hover {
+            background: rgba(245, 213, 138, .12) !important;
+        }
+    </style>
 </head>
+
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Ecommerce Libro</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-lg main-navbar mb-4">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-book-half me-2"></i>
+                    Ecommerce Libro
+                </a>
+
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarPrincipal"
+                        aria-controls="navbarPrincipal"
+                        aria-expanded="false"
+                        aria-label="Abrir menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="navbarPrincipal">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door"></i>Inicio
+                            </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+
+                        <li class="nav-item d-none" id="navUsuarios">
+                            <a class="nav-link nav-admin"
+                               asp-controller="Usuarios" asp-action="Index">
+                                <i class="bi bi-shield-lock"></i>Usuarios
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Privacy">
+                                <i class="bi bi-shield-check"></i>Privacidad
+                            </a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav align-items-lg-center gap-lg-2">
+                        <li class="nav-item" id="itemLogin">
+                            <a class="nav-link nav-action"
+                               asp-controller="Auth" asp-action="Login"
+                               id="navLogin">
+                                <i class="bi bi-box-arrow-in-right"></i>Iniciar sesión
+                            </a>
+                        </li>
+
+                        <li class="nav-item" id="itemRegistro">
+                            <a class="nav-link nav-register"
+                               asp-controller="Auth" asp-action="Registro"
+                               id="navRegistro">
+                                <i class="bi bi-person-plus"></i>Crear cuenta
+                            </a>
+                        </li>
+
+                        <li class="nav-item d-none" id="itemPerfil">
+                            <a class="nav-link"
+                               asp-controller="Auth" asp-action="Perfil"
+                               id="navPerfil">
+                                <i class="bi bi-person-circle"></i>Mi perfil
+                            </a>
+                        </li>
+
+                        <li class="nav-item d-none" id="itemLogout">
+                            <button class="nav-link nav-action"
+                                    type="button" id="navLogout">
+                                <i class="bi bi-box-arrow-right"></i>Cerrar sesión
+                            </button>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-4">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted mt-4 py-3">
         <div class="container">
-            &copy; 2026 - ecommerce_libro_ulp_backend - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2026 - ecommerce_libro_ulp_backend -
+            <a asp-controller="Home" asp-action="Privacy">Privacidad</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        (() => {
+            const login = document.getElementById("itemLogin");
+            const registro = document.getElementById("itemRegistro");
+            const perfil = document.getElementById("itemPerfil");
+            const logout = document.getElementById("itemLogout");
+            const usuarios = document.getElementById("navUsuarios");
+
+            function mostrarAutenticado(autenticado) {
+                login?.classList.toggle("d-none", autenticado);
+                registro?.classList.toggle("d-none", autenticado);
+                perfil?.classList.toggle("d-none", !autenticado);
+                logout?.classList.toggle("d-none", !autenticado);
+            }
+
+            async function actualizarMenu() {
+                const token = sessionStorage.getItem("jwt");
+
+                mostrarAutenticado(Boolean(token));
+                usuarios?.classList.add("d-none");
+
+                if (!token) return;
+
+                try {
+                    const response = await fetch("/api/account/me", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${token}`,
+                            "Accept": "application/json"
+                        }
+                    });
+
+                    if (response.status === 401) {
+                        sessionStorage.removeItem("jwt");
+                        mostrarAutenticado(false);
+                        return;
+                    }
+
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    const usuario = data.usuario ?? data.Usuario ?? data;
+                    const rol = String(
+                        usuario.rol ?? usuario.Rol ?? ""
+                    ).toUpperCase();
+
+                    // El rol se obtiene de la API, no de datos editables
+                    // almacenados en el navegador.
+                    usuarios?.classList.toggle("d-none", rol !== "ADMIN");
+                } catch (error) {
+                    // Si falla la consulta, el acceso administrativo
+                    // permanece oculto.
+                    usuarios?.classList.add("d-none");
+                    console.error("No se pudo verificar el rol del usuario.");
+                }
+            }
+
+            document.getElementById("navLogout")?.addEventListener("click", () => {
+                sessionStorage.removeItem("jwt");
+                window.location.assign("/Auth/Login");
+            });
+
+            actualizarMenu();
+        })();
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

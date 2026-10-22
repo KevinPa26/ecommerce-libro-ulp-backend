@@ -47,10 +47,12 @@ public class UsuarioRepository : IUsuarioRepository
 
 	public async Task<Usuario?> ObtenerPorEmail(string email)
 	{
-		// Usamos FirstAsync, dado que email en la base de datos esta marcado como UNIQUE
+		var emailNormalizado = email.Trim();
+
 		return await _context.Usuarios
-			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Email.Contains(email))
-			.FirstOrDefaultAsync();
+			.FirstOrDefaultAsync(u =>
+				u.Activo == EstadoUsuario.ACTIVO &&
+				u.Email == emailNormalizado);
 	}
 
 	public async Task<List<Usuario>> ObtenerPorEstado(EstadoUsuario estado)

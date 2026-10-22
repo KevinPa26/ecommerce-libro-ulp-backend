@@ -1,0 +1,119 @@
+
+@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <div id="cargando" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="text-secondary mt-3">Cargando tu perfil...</p>
+                    </div>
+
+                    <div id="contenidoPerfil" class="d-none">
+                        <div class="text-center mb-4">
+                            <img id="avatarPerfil"
+                                 class="rounded-circle border"
+                                 width="120" height="120"
+                                 alt="Avatar del usuario"
+                                 style="object-fit: cover;" />
+                            <h1 id="nombrePerfil" class="h3 mt-3"></h1>
+                            <span id="rolPerfil" class="badge text-bg-primary"></span>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <span class="text-secondary d-block">Email</span>
+                            <strong id="emailPerfil"></strong>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button id="btnLogout" class="btn btn-outline-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Cerrar sesión
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="errorPerfil" class="alert alert-danger d-none"
+                         role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const token = sessionStorage.getItem("jwt");
+    const cargando = document.getElementById("cargando");
+    const contenido = document.getElementById("contenidoPerfil");
+    const error = document.getElementById("errorPerfil");
+
+    function cerrarSesion() {
+        sessionStorage.removeItem("jwt");
+        window.location.replace("/Auth/Login");
+    }
+
+    document.getElementById("btnLogout").addEventListener(
+        "click", cerrarSesion
+    );
+
+    async function cargarPerfil() {
+        if (!token) {
+            cerrarSesion();
+            return;
+        }
+
+        try {
+            const respuesta = await fetch("/api/account/me", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Accept": "application/json"
+                }
+            });
+
+            if (respuesta.status === 401 || respuesta.status === 403) {
+                cerrarSesion();
+                return;
+            }
+
+            if (!respuesta.ok) {
+                throw new Error("No se pudo cargar el perfil.");
+            }
+
+            const usuario = await respuesta.json();
+
+            document.getElementById("nombrePerfil").textContent = usuario.nombre;
+            document.getElementById("emailPerfil").textContent = usuario.email;
+            document.getElementById("rolPerfil").textContent = usuario.rol;
+
+            const avatar = document.getElementById("avatarPerfil");
+            avatar.src = usuario.avatar || "/images/avatar-default.png";
+            avatar.onerror = () => {
+                avatar.onerror = null;
+                avatar.src = "/images/avatar-default.png";
+            };
+
+            cargando.classList.add("d-none");
+            contenido.classList.remove("d-none");
+        } catch {
+            cargando.classList.add("d-none");
+            error.textContent =
+                "No pudimos cargar tu perfil. Revisá tu conexión e intentá nuevamente.";
+            error.classList.remove("d-none");
+        }
+    }
+
+    cargarPerfil();
+})();
+</script>
+}

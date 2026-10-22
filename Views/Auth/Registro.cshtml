@@ -1,0 +1,178 @@
+
+@{
+    ViewData["Title"] = "Crear cuenta";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus fs-1 text-primary"></i>
+                        <h1 class="h3 mt-3">Crear cuenta</h1>
+                        <p class="text-secondary">
+                            Registrate para comenzar a comprar.
+                        </p>
+                    </div>
+
+                    <div id="mensaje" class="alert d-none" role="alert"></div>
+
+                    <form id="formRegistro" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre completo</label>
+                            <input id="nombre" name="Nombre" type="text"
+                                   class="form-control" minlength="2"
+                                   maxlength="100" autocomplete="name" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input id="email" name="Email" type="email"
+                                   class="form-control" maxlength="150"
+                                   autocomplete="email" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input id="password" name="Password" type="password"
+                                   class="form-control" minlength="8"
+                                   maxlength="100" autocomplete="new-password" required />
+                            <div class="form-text">Mínimo 8 caracteres.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmarPassword" class="form-label">
+                                Confirmar contraseña
+                            </label>
+                            <input id="confirmarPassword" name="ConfirmarPassword"
+                                   type="password" class="form-control"
+                                   minlength="8" maxlength="100"
+                                   autocomplete="new-password" required />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="avatar" class="form-label">
+                                Foto de perfil (opcional)
+                            </label>
+                            <input id="avatar" name="Avatar" type="file"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            <div class="form-text">JPG, PNG o WEBP. Máximo 2 MB.</div>
+
+                            <img id="vistaPrevia" class="rounded-circle mt-3 d-none"
+                                 alt="Vista previa del avatar"
+                                 width="100" height="100"
+                                 style="object-fit: cover;" />
+                        </div>
+
+                        <button id="btnRegistro" type="submit"
+                                class="btn btn-primary w-100">
+                            Crear cuenta
+                        </button>
+                    </form>
+
+                    <p class="text-center mt-4 mb-0">
+                        ¿Ya tenés cuenta?
+                        <a asp-controller="Auth" asp-action="Login">
+                            Iniciá sesión
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const form = document.getElementById("formRegistro");
+    const mensaje = document.getElementById("mensaje");
+    const boton = document.getElementById("btnRegistro");
+    const avatar = document.getElementById("avatar");
+    const vistaPrevia = document.getElementById("vistaPrevia");
+
+    function mostrarMensaje(texto, tipo = "danger") {
+        mensaje.textContent = texto;
+        mensaje.className = `alert alert-${tipo}`;
+    }
+
+    avatar.addEventListener("change", () => {
+        const archivo = avatar.files[0];
+
+        if (!archivo) {
+            vistaPrevia.removeAttribute("src");
+            vistaPrevia.classList.add("d-none");
+            return;
+        }
+
+        const tiposPermitidos = [
+            "image/jpeg", "image/png", "image/webp"
+        ];
+
+        if (!tiposPermitidos.includes(archivo.type) ||
+            archivo.size > 2 * 1024 * 1024) {
+            avatar.value = "";
+            vistaPrevia.removeAttribute("src");
+            vistaPrevia.classList.add("d-none");
+            mostrarMensaje("Elegí una imagen JPG, PNG o WEBP de hasta 2 MB.");
+            return;
+        }
+
+        vistaPrevia.src = URL.createObjectURL(archivo);
+        vistaPrevia.classList.remove("d-none");
+        mensaje.className = "alert d-none";
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        mensaje.className = "alert d-none";
+
+        const password = document.getElementById("password").value;
+        const confirmar = document.getElementById("confirmarPassword").value;
+
+        if (password !== confirmar) {
+            mostrarMensaje("Las contraseñas no coinciden.");
+            return;
+        }
+
+        boton.disabled = true;
+        boton.textContent = "Creando cuenta...";
+
+        try {
+            const datos = new FormData(form);
+
+            const respuesta = await fetch("/api/account/register", {
+                method: "POST",
+                body: datos
+            });
+
+            const data = await respuesta.json();
+
+            if (!respuesta.ok) {
+                mostrarMensaje(
+                    data.mensaje ||
+                    Object.values(data.errors || {}).flat().join(" ") ||
+                    "No se pudo crear la cuenta."
+                );
+                return;
+            }
+
+            if (!data.token) {
+                mostrarMensaje("La cuenta se creó, pero no se recibió el token. Iniciá sesión.");
+                return;
+            }
+
+            sessionStorage.setItem("jwt", data.token);
+            window.location.assign("/Auth/Perfil");
+        } catch {
+            mostrarMensaje("No se pudo conectar con el servidor.");
+        } finally {
+            boton.disabled = false;
+            boton.textContent = "Crear cuenta";
+        }
+    });
+})();
+</script>
+}
