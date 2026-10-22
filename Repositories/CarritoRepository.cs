@@ -18,7 +18,10 @@ public class CarritoRepository : ICarritoRepository
 
 	public async Task<List<Carrito>> ObtenerTodos()
 	{
-		return await _context.Carritos.ToListAsync();
+		return await _context.Carritos
+			.Include(c => c.Libro)
+			.Include(c => c.Usuario)
+			.ToListAsync();
 	}
 
 	public async Task Crear(Carrito obj)
@@ -43,13 +46,13 @@ public class CarritoRepository : ICarritoRepository
 	{
 		return await _context.Carritos
 			.Where(c => c.UsuarioId.Equals(user_id))
+			.Include(c => c.Libro)
+			.Include(c => c.Usuario)
 			.ToListAsync();
 	}
 
 	public async Task<List<Carrito>> ObtenerPorUsuario(Usuario usuario)
 	{
-		return await _context.Carritos
-			.Where(c => c.UsuarioId.Equals(usuario.Id))
-			.ToListAsync();
+		return await ObtenerPorUsuarioId(usuario.Id);
 	}
 }
