@@ -36,7 +36,7 @@
 					@foreach (var favorito in Model)
 					{
 						<tr>
-							<td class="fw-semibold">Libro #@favorito.LibroId</td>
+							<td class="fw-semibold">@favorito.Libro.Titulo</td>
 							<td>
 								@if (favorito.FechaAgregado.HasValue)
 								{
@@ -48,7 +48,7 @@
 								}
 							</td>
 							<td class="text-end">
-								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar libro #@favorito.LibroId de favoritos">
+								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos">
 									<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 								</button>
 							</td>

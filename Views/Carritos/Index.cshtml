@@ -38,7 +38,7 @@
 					@foreach (var carrito in carritos)
 					{
 						<tr>
-							<td class="fw-semibold">Libro #@carrito.LibroId</td>
+							<td class="fw-semibold">@carrito.Libro.Titulo</td>
 							<td>
 								@if (carrito.FechaAgregado.HasValue)
 								{
@@ -50,11 +50,11 @@
 								}
 							</td>
 							<td>
-								<label class="visually-hidden" for="cantidad-@carrito.Id">Cantidad del libro #@carrito.LibroId</label>
+								<label class="visually-hidden" for="cantidad-@carrito.Id">Cantidad del libro @carrito.Libro.Titulo</label>
 								<input id="cantidad-@carrito.Id" class="form-control form-control-sm" type="number" min="1" value="@carrito.Cantidad" style="width: 6rem" />
 							</td>
 							<td class="text-end">
-								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar libro #@carrito.LibroId del carrito">
+								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @carrito.Libro.Titulo del carrito">
 									<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 								</button>
 							</td>
