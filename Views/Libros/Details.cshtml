@@ -1,0 +1,183 @@
+@model ecommerce_libro_ulp_backend.Models.Libro
+
+@{
+    ViewData["Title"] = Model.Titulo ?? "Detalles del Libro";
+}
+
+<div id="app" class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Catálogo</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Detalles del Libro</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm border-0 p-4">
+        <div class="row g-4">
+            
+            <!-- SECCIÓN DE IMÁGENES (Estilo MercadoLibre: Miniaturas a la izquierda + Imagen Grande) -->
+            <div class="col-md-7">
+                <div class="d-flex flex-column flex-md-row gap-3">
+                    
+                    <!-- Columna de Miniaturas Seleccionables -->
+                    <div class="d-flex flex-row flex-md-column gap-2 overflow-auto order-2 order-md-1" style="max-height: 450px;">
+                        <div v-for="(img, index) in libro.Imagenes" :key="img.Id || index" 
+                             @@click="imagenActiva = img.Path"
+                             class="border rounded p-1 cursor-pointer thumb-container"
+                             :class="{ 'border-primary border-2 shadow-sm': imagenActiva === img.Path }"
+                             style="width: 70px; height: 70px; min-width: 70px;">
+                            <img :src="img.Path" class="w-100 h-100 object-fit-cover rounded" alt="Miniatura" />
+                        </div>
+                    </div>
+
+                    <!-- Visualizador de Imagen Grande -->
+                    <div class="flex-grow-1 border rounded p-3 text-center bg-light d-flex align-items-center justify-content-center position-relative order-1 order-md-2" style="height: 450px;">
+                        <!-- Badge de Principal -->
+                        <span class="position-absolute top-0 start-0 m-3 badge bg-secondary" v-if="esImagenPrincipal">
+                            Portada Principal
+                        </span>
+                        
+                        <img :src="imagenActiva || 'https://via.placeholder.com/400?text=Sin+Imagen'" 
+                             class="mw-100 mh-100 object-fit-contain shadow-sm rounded" 
+                             alt="Imagen principal del libro" />
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE INFORMACIÓN Y ACCIONES -->
+            <div class="col-md-5 d-flex flex-column">
+                
+                <!-- Estado y ISBN -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small" v-if="libro.Isbn13">ISBN: {{ libro.Isbn13 }}</span>
+                    <span v-if="libro.Estado === 0" class="badge bg-success">Disponible</span>
+                    <span v-else-if="libro.Estado === 1" class="badge bg-warning text-dark">Agotado</span>
+                    <span v-else class="badge bg-danger">Inactivo</span>
+                </div>
+
+                <!-- Título -->
+                <h1 class="h3 fw-bold text-dark mb-2">{{ libro.Titulo }}</h1>
+
+                <!-- Autor -->
+                <p class="text-muted mb-3">
+                    Por <span class="fw-semibold text-primary">{{ libro.Autor }}</span>
+                </p>
+
+                <!-- Precio -->
+                <div class="mb-3">
+                    <div class="fs-2 fw-bold text-success">
+                        ${{  libro.Precio.toLocaleString('es-AR', { minimumFractionDigits: 2 }) }}
+                    </div>
+                </div>
+
+                <!-- Stock Disponibilidad -->
+                <div class="mb-4">
+                    <span :class="libro.Stock > 0 ? 'text-info fw-semibold' : 'text-danger'">
+                        <i class="bi bi-boxes"></i> Stock disponible: <strong>{{ libro.Stock }} unidades</strong>
+                    </span>
+                </div>
+
+                <!-- Botones de Acción (Comprar, Carrito, Favoritos) -->
+                <div class="d-grid gap-2 mb-4">
+                    <button class="py-2 btn btn-primary btn-lg fw-bold shadow-sm" @@click="comprarAhora" :disabled="libro.Stock <= 0">
+                        <i class="bi bi-lightning-charge-fill"></i> Comprar ahora
+                    </button>
+                    <button class="py-2 btn btn-outline-primary btn-lg fw-semibold" @@click="agregarAlCarrito" :disabled="libro.Stock <= 0">
+                        <i class="bi bi-cart-plus"></i> Agregar al carrito
+                    </button>
+                    <button class="btn btn-outline-danger" @@click="toggleFavorito">
+                        <i class="bi" :class="esFavorito ? 'bi-heart-fill' : 'bi-heart'"></i> 
+                        {{ esFavorito ? 'Eliminar de favoritos' : 'Agregar a favoritos' }}
+                    </button>
+                </div>
+
+                <!-- Descripción del Vendedor -->
+                <div class="card bg-light border-0 p-3 mt-auto">
+                    <h6 class="fw-bold text-secondary mb-1"><i class="bi bi-info-circle"></i> Información del Vendedor</h6>
+                    <p class="small text-muted mb-0">
+                        {{ libro.DescripcionVendedor || 'El vendedor no especificó detalles adicionales sobre el estado del libro.' }}
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Fila Inferior: Sinopsis / Descripción General -->
+        <div class="row mt-5 pt-4 border-top">
+            <div class="col-12">
+                <h4 class="fw-bold text-secondary mb-3">Sinopsis / Descripción</h4>
+                <p class="text-secondary" style="white-space: pre-line;">
+                    {{ libro.DescripcionLibro || 'No hay descripción general disponible para este título.' }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Botón Volver -->
+        <div class="mt-4">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Catálogo
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos para miniaturas interactivas -->
+<style>
+    .thumb-container {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .thumb-container:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                libro: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)),
+                imagenActiva: '',
+                esFavorito: false
+            }
+        },
+        computed: {
+            esImagenPrincipal() {
+                if (!this.libro.Imagenes || this.libro.Imagenes.length === 0) return false;
+                const encontrada = this.libro.Imagenes.find(img => img.Path === this.imagenActiva);
+                return encontrada ? encontrada.EsPrincipal : false;
+            }
+        },
+        mounted() {
+            // Inicializar la imagen activa por defecto con la principal o la primera de la lista
+            if (this.libro.Imagenes && this.libro.Imagenes.length > 0) {
+                const principal = this.libro.Imagenes.find(img => img.EsPrincipal);
+                this.imagenActiva = principal ? principal.Path : this.libro.Imagenes[0].Path;
+            }
+        },
+        methods: {
+            comprarAhora() {
+                alert(`¡Redirigiendo al proceso de pago para el libro: ${this.libro.Titulo}!`);
+                // Aquí puedes integrar la lógica de checkout
+            },
+            agregarAlCarrito() {
+                alert(`"${this.libro.Titulo}" se ha agregado a tu carrito de compras.`);
+                // Aquí puedes llamar a tu API de carrito con fetch/axios
+            },
+            toggleFavorito() {
+                this.esFavorito = !this.esFavorito;
+                if (this.esFavorito) {
+                    alert('Agregado a tus favoritos.');
+                } else {
+                    alert('Eliminado de tus favoritos.');
+                }
+            }
+        }
+    }).mount('#app');
+</script>
