@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class ImagenLibroRepository : IImagenLibroRepository
 {
-	private readonly AppDbContext _context;
+	private readonly DataContext _context;
 
-	public ImagenLibroRepository(AppDbContext context)
+	public ImagenLibroRepository(DataContext context)
 	{
 		_context = context;
 	}

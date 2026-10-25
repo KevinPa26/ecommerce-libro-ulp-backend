@@ -1,21 +1,23 @@
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ecommerce_libro_ulp_backend.Models;
-
-public class Compra
+namespace ecommerce_libro_ulp_backend.Models
 {
-    [Key]
-    public int Id { get; set; }
+    public class Compra
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [Required(ErrorMessage = "El comprador es obligatorio.")]
-    [Range(1, int.MaxValue,
-        ErrorMessage = "El comprador seleccionado no es válido.")]
-    public int UsuarioId { get; set; }
+        [Required(ErrorMessage = "El usuario comprador es obligatorio.")]
+        public int UsuarioId { get; set; }
 
-    [Required(ErrorMessage = "La fecha de compra es obligatoria.")]
-    [Column(TypeName = "date")]
-    [DataType(DataType.Date)]
-    public DateTime FechaCompra { get; set; } = DateTime.Today;
+        [ForeignKey("UsuarioId")]
+        public Usuario? Usuario { get; set; }
+
+        [Required(ErrorMessage = "La fecha de compra es obligatoria.")]
+        [Column(TypeName = "date")]
+        public DateTime FechaCompra { get; set; } = DateTime.Now;
+
+        public ICollection<DetalleCompra> Detalles { get; set; } = new List<DetalleCompra>();
+    }
 }

@@ -72,7 +72,7 @@ public class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAdd();
 
-            e.Property(x => x.Activo)
+            e.Property(x => x.Estado)
                 .HasColumnName("estado")
                 .HasColumnType("enum('ACTIVO','INACTIVO','SUSPENDIDO')")
                 .HasConversion<string>()

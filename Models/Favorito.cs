@@ -1,36 +1,29 @@
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ecommerce_libro_ulp_backend.Models;
-
-public class Favorito
+namespace ecommerce_libro_ulp_backend.Models
 {
-    [Key]
-    public int Id { get; set; }
+    [Table("Favorito")]
+    public class Favorito
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [Required(ErrorMessage = "El usuario es obligatorio.")]
-    [Range(1, int.MaxValue,
-        ErrorMessage = "El usuario seleccionado no es válido.")]
-    public int UsuarioId { get; set; }
+        [Required(ErrorMessage = "El usuario es obligatorio.")]
+        [Column("usuario_id")]
+        public int UsuarioId { get; set; }
 
-    /* 
-     * A Usuario y Libro los rellena EF.
-     * Por defecto se basa en UsuarioId y LibroId.
-     * El virtual hace que EF haga lazy load. Tecnicamente no nos
-     * haria falta por que planeamos incluir los datos de forma
-     * explicita con el .Include() en FavoritoRepository.
-     */
-    public virtual Usuario Usuario { get; set; } = null!;
+        [ForeignKey("UsuarioId")]
+        public Usuario? Usuario { get; set; }
 
-    [Required(ErrorMessage = "El libro es obligatorio.")]
-    [Range(1, int.MaxValue,
-        ErrorMessage = "El libro seleccionado no es válido.")]
-    public int LibroId { get; set; }
+        [Required(ErrorMessage = "El libro es obligatorio.")]
+        [Column("libro_id")]
+        public int LibroId { get; set; }
 
-    public virtual Libro Libro { get; set; } = null!;
+        [ForeignKey("LibroId")]
+        public Libro? Libro { get; set; }
 
-    [Column(TypeName = "date")]
-    [DataType(DataType.Date)]
-    public DateTime? FechaAgregado { get; set; }
+        [Column("fecha_agregado", TypeName = "date")]
+        public DateTime? FechaAgregado { get; set; }
+    }
 }

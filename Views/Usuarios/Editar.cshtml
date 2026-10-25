@@ -79,15 +79,15 @@
                                 <span asp-validation-for="Rol" class="text-danger small"></span>
                             </div>
 
-                            <!-- Estado (Activo) -->
+                            <!-- Estado (Estado) -->
                             <div class="col-md-6">
-                                <label asp-for="Activo" class="form-label fw-bold">Estado de la Cuenta *</label>
+                                <label asp-for="Estado" class="form-label fw-bold">Estado de la Cuenta *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
-                                    <select asp-for="Activo" v-model="form.activo" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoUsuario>()">
+                                    <select asp-for="Estado" v-model="form.estado" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoUsuario>()">
                                     </select>
                                 </div>
-                                <span asp-validation-for="Activo" class="text-danger small"></span>
+                                <span asp-validation-for="Estado" class="text-danger small"></span>
                             </div>
 
                             <!-- Subida de Nuevo Avatar -->
@@ -143,7 +143,7 @@
                     email: '@Model.Email',
                     password: '',
                     rol: '@((int)Model.Rol)',
-                    activo: '@((int)Model.Activo)'
+                    estado: '@((int)Model.Estado)'
                 }
             }
         },

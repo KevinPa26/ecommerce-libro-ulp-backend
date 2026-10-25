@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class CompraRepository : ICompraRepository
 {
-	private readonly AppDbContext _context;
+	private readonly DataContext _context;
 
-	public CompraRepository(AppDbContext context)
+	public CompraRepository(DataContext context)
 	{
 		_context = context;
 	}

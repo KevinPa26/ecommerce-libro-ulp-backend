@@ -1,40 +1,33 @@
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ecommerce_libro_ulp_backend.Models;
-
-public class Carrito
+namespace ecommerce_libro_ulp_backend.Models
 {
-    [Key]
-    public int Id { get; set; }
+    [Table("Carrito")]
+    public class Carrito
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [Required(ErrorMessage = "El usuario es obligatorio.")]
-    [Range(1, int.MaxValue,
-        ErrorMessage = "El usuario seleccionado no es válido.")]
-    public int UsuarioId { get; set; }
+        [Required(ErrorMessage = "El usuario es obligatorio.")]
+        [Column("usuario_id")]
+        public int UsuarioId { get; set; }
 
-    /* 
-     * A Usuario y Libro los rellena EF.
-     * Por defecto se basa en UsuarioId y LibroId.
-     * El virtual hace que EF haga lazy load. Tecnicamente no nos
-     * haria falta por que planeamos incluir los datos de forma
-     * explicita con el .Include() en CarritoRepository.
-     */
-    public virtual Usuario Usuario { get; set; } = null!;
+        [ForeignKey("UsuarioId")]
+        public Usuario? Usuario { get; set; }
 
-    [Required(ErrorMessage = "El libro es obligatorio.")]
-    [Range(1, int.MaxValue,
-        ErrorMessage = "El libro seleccionado no es válido.")]
-    public int LibroId { get; set; }
+        [Required(ErrorMessage = "El libro es obligatorio.")]
+        [Column("libro_id")]
+        public int LibroId { get; set; }
 
-    public virtual Libro Libro { get; set; } = null!;
+        [ForeignKey("LibroId")]
+        public Libro? Libro { get; set; }
 
-    [Range(1, int.MaxValue,
-        ErrorMessage = "La cantidad debe ser como mínimo 1.")]
-    public int Cantidad { get; set; } = 1;
+        [Required(ErrorMessage = "La cantidad es obligatoria.")]
+        [Range(1, 100, ErrorMessage = "La cantidad por ítem debe estar entre 1 y 100.")]
+        public int Cantidad { get; set; } = 1;
 
-    [Column(TypeName = "date")]
-    [DataType(DataType.Date)]
-    public DateTime? FechaAgregado { get; set; }
+        [Column("fecha_agregado", TypeName = "date")]
+        public DateTime? FechaAgregado { get; set; }
+    }
 }

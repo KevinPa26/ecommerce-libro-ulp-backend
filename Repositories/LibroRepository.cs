@@ -4,22 +4,25 @@ using Microsoft.EntityFrameworkCore;
 
 public class LibroRepository : ILibroRepository
 {
-    private readonly AppDbContext _context;
+    private readonly DataContext _context;
 
-    public LibroRepository(AppDbContext context)
+    public LibroRepository(DataContext context)
     {
         _context = context;
     }
 
     public async Task<Libro?> ObtenerPorId(int id)
     {
-        return await _context.Libros.FindAsync(id);
+        return await _context.Libros
+            .Include(l => l.Imagenes) 
+            .FirstOrDefaultAsync(m => m.Id == id);
     }
 
     public async Task<List<Libro>> ObtenerTodos()
     {
         return await _context.Libros
             .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO))
+            .Include(l => l.Imagenes)
             .ToListAsync();
     }
 

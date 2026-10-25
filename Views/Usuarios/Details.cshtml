@@ -51,11 +51,11 @@
 
                                 <div class="col-6">
                                     <label class="text-muted small d-block">Estado de la Cuenta</label>
-                                    @if (Model.Activo == ecommerce_libro_ulp_backend.Models.EstadoUsuario.ACTIVO)
+                                    @if (Model.Estado == ecommerce_libro_ulp_backend.Models.EstadoUsuario.ACTIVO)
                                     {
                                         <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Activo</span>
                                     }
-                                    else if (Model.Activo == ecommerce_libro_ulp_backend.Models.EstadoUsuario.INACTIVO)
+                                    else if (Model.Estado == ecommerce_libro_ulp_backend.Models.EstadoUsuario.INACTIVO)
                                     {
                                         <span class="badge bg-warning text-dark fs-6"><i class="bi bi-dash-circle"></i> Inactivo</span>
                                     }
@@ -109,13 +109,13 @@
         data() {
             return {
                 usuarioId: @Model.Id,
-                avatarUrl: `/Usuarios/Avatar/${@Model.Id}`
+                avatarUrl: '@(!string.IsNullOrEmpty(Model.Avatar) ? Model.Avatar : "/images/default-avatar.svg")'
             }
         },
         methods: {
             onAvatarError(e) {
-                // Si la imagen falla al cargar, muestra un placeholder por defecto
-                e.target.src = 'https://via.placeholder.com/130?text=Sin+Avatar';
+                // Si la imagen falla al cargar en el navegador, pone el placeholder por defecto
+                e.target.src = '/images/default-avatar.svg';
             }
         }
     }).mount('#app');

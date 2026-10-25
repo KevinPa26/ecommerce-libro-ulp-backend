@@ -81,7 +81,7 @@ public class AccountController : ControllerBase
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(
                     request.Password),
                 Rol = RolUsuario.USUARIO,
-                Activo = EstadoUsuario.ACTIVO,
+                Estado = EstadoUsuario.ACTIVO,
                 Avatar = rutaAvatar ?? string.Empty,
                 FechaRegistro = DateTime.UtcNow
             };
@@ -159,7 +159,7 @@ public class AccountController : ControllerBase
         var usuario = await _usuarioRepository.ObtenerPorId(usuarioId);
 
         if (usuario is null ||
-            usuario.Activo != EstadoUsuario.ACTIVO)
+            usuario.Estado != EstadoUsuario.ACTIVO)
         {
             return Unauthorized(new
             {

@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class CarritoRepository : ICarritoRepository
 {
-	private readonly AppDbContext _context;
+	private readonly DataContext _context;
 
-	public CarritoRepository(AppDbContext context)
+	public CarritoRepository(DataContext context)
 	{
 		_context = context;
 	}

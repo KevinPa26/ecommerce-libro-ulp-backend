@@ -65,7 +65,7 @@ builder.Services.AddScoped<IImagenLibroRepository, ImagenLibroRepository>();
 //para conectar con url en appsetting
 //builder.Configuration["ConnectionStrings:MySqlConnectionString"]
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<DataContext>(options =>
     options.UseMySql(
         builder.Configuration["ConnectionStrings:MySqlConnectionString"],
         new MySqlServerVersion(new Version(8, 0, 36))
@@ -80,7 +80,7 @@ if (app.Environment.IsDevelopment())
         using var scope = app.Services.CreateScope();
 
         var db = scope.ServiceProvider
-            .GetRequiredService<AppDbContext>();
+            .GetRequiredService<DataContext>();
 
         var conectado = await db.Database.CanConnectAsync();
 

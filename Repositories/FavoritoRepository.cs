@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class FavoritoRepository : IFavoritoRepository
 {
-	private readonly AppDbContext _context;
+	private readonly DataContext _context;
 
-	public FavoritoRepository(AppDbContext context)
+	public FavoritoRepository(DataContext context)
 	{
 		_context = context;
 	}

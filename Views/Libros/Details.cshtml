@@ -21,8 +21,8 @@
             <div class="col-md-7">
                 <div class="d-flex flex-column flex-md-row gap-3">
                     
-                    <!-- Columna de Miniaturas Seleccionables -->
-                    <div class="d-flex flex-row flex-md-column gap-2 overflow-auto order-2 order-md-1" style="max-height: 450px;">
+                    <!-- Columna de Miniaturas Seleccionables (Se agregó flex-shrink-0 para evitar que la pisen) -->
+                    <div class="d-flex flex-row flex-md-column gap-2 overflow-auto order-2 order-md-1 flex-shrink-0" style="max-height: 450px; width: fit-content;">
                         <div v-for="(img, index) in libro.Imagenes" :key="img.Id || index" 
                              @@click="imagenActiva = img.Path"
                              class="border rounded p-1 cursor-pointer thumb-container"
@@ -32,8 +32,8 @@
                         </div>
                     </div>
 
-                    <!-- Visualizador de Imagen Grande -->
-                    <div class="flex-grow-1 border rounded p-3 text-center bg-light d-flex align-items-center justify-content-center position-relative order-1 order-md-2" style="height: 450px;">
+                    <!-- Visualizador de Imagen Grande (Se agregó min-width: 0 para contener el flex-grow) -->
+                    <div class="flex-grow-1 border rounded p-3 text-center bg-light d-flex align-items-center justify-content-center position-relative order-1 order-md-2" style="height: 450px; min-width: 0;">
                         <!-- Badge de Principal -->
                         <span class="position-absolute top-0 start-0 m-3 badge bg-secondary" v-if="esImagenPrincipal">
                             Portada Principal
@@ -69,7 +69,7 @@
                 <!-- Precio -->
                 <div class="mb-3">
                     <div class="fs-2 fw-bold text-success">
-                        ${{  libro.Precio.toLocaleString('es-AR', { minimumFractionDigits: 2 }) }}
+                        ${{ libro.Precio.toLocaleString('es-AR', { minimumFractionDigits: 2 }) }}
                     </div>
                 </div>
 
@@ -80,7 +80,7 @@
                     </span>
                 </div>
 
-                <!-- Botones de Acción (Comprar, Carrito, Favoritos) -->
+                <!-- Botones de Acción -->
                 <div class="d-grid gap-2 mb-4">
                     <button class="py-2 btn btn-primary btn-lg fw-bold shadow-sm" @@click="comprarAhora" :disabled="libro.Stock <= 0">
                         <i class="bi bi-lightning-charge-fill"></i> Comprar ahora
@@ -124,7 +124,6 @@
     </div>
 </div>
 
-<!-- Estilos para miniaturas interactivas -->
 <style>
     .thumb-container {
         cursor: pointer;
@@ -164,11 +163,9 @@
         methods: {
             comprarAhora() {
                 alert(`¡Redirigiendo al proceso de pago para el libro: ${this.libro.Titulo}!`);
-                // Aquí puedes integrar la lógica de checkout
             },
             agregarAlCarrito() {
                 alert(`"${this.libro.Titulo}" se ha agregado a tu carrito de compras.`);
-                // Aquí puedes llamar a tu API de carrito con fetch/axios
             },
             toggleFavorito() {
                 this.esFavorito = !this.esFavorito;

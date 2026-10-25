@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class UsuarioRepository : IUsuarioRepository
 {
-	private readonly AppDbContext _context;
+	private readonly DataContext _context;
 
-	public UsuarioRepository(AppDbContext context)
+	public UsuarioRepository(DataContext context)
 	{
 		_context = context;
 	}
@@ -21,7 +21,7 @@ public class UsuarioRepository : IUsuarioRepository
 	{
 		if (obj != null)
 		{
-			obj.Activo = EstadoUsuario.INACTIVO;
+			obj.Estado = EstadoUsuario.INACTIVO;
 			await _context.SaveChangesAsync();
 		}
 	}
@@ -36,7 +36,7 @@ public class UsuarioRepository : IUsuarioRepository
 			usuarioDb.Nombre = usuario.Nombre;
 			usuarioDb.Email = usuario.Email;
 			usuarioDb.Rol = usuario.Rol;
-			usuarioDb.Activo = usuario.Activo;
+			usuarioDb.Estado = usuario.Estado;
 			usuarioDb.Avatar = usuario.Avatar;
 			usuarioDb.PasswordHash = usuario.PasswordHash;
 			// La FechaRegistro no hace falta tocarla porque se preserva intacta
@@ -51,14 +51,14 @@ public class UsuarioRepository : IUsuarioRepository
 
 		return await _context.Usuarios
 			.FirstOrDefaultAsync(u =>
-				u.Activo == EstadoUsuario.ACTIVO &&
+				u.Estado == EstadoUsuario.ACTIVO &&
 				u.Email == emailNormalizado);
 	}
 
 	public async Task<List<Usuario>> ObtenerPorEstado(EstadoUsuario estado)
 	{
 		return await _context.Usuarios
-			.Where(u => u.Activo.Equals(estado))
+			.Where(u => u.Estado.Equals(estado))
 			.ToListAsync();
 	}
 
@@ -70,21 +70,21 @@ public class UsuarioRepository : IUsuarioRepository
 	public async Task<List<Usuario>> ObtenerPorNombre(string nombre)
 	{
 		return await _context.Usuarios
-			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Nombre.Contains(nombre))
+			.Where(u => u.Estado.Equals(EstadoUsuario.ACTIVO) && u.Nombre.Contains(nombre))
 			.ToListAsync();
 	}
 
 	public async Task<List<Usuario>> ObtenerPorRol(RolUsuario rol)
 	{
 		return await _context.Usuarios
-			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO) && u.Rol.Equals(rol))
+			.Where(u => u.Estado.Equals(EstadoUsuario.ACTIVO) && u.Rol.Equals(rol))
 			.ToListAsync();
 	}
 
 	public async Task<List<Usuario>> ObtenerTodos()
 	{
 		return await _context.Usuarios
-			.Where(u => u.Activo.Equals(EstadoUsuario.ACTIVO))
+			.Where(u => u.Estado.Equals(EstadoUsuario.ACTIVO))
 			.ToListAsync();
 	}
 
