@@ -35,24 +35,27 @@
 				<tbody>
 					@foreach (var favorito in Model)
 					{
-						<tr>
-							<td class="fw-semibold">@favorito.Libro.Titulo</td>
-							<td>
-								@if (favorito.FechaAgregado.HasValue)
-								{
-									@favorito.FechaAgregado.Value.ToString("dd/MM/yyyy")
-								}
-								else
-								{
-									<span class="text-muted">Sin fecha</span>
-								}
-							</td>
-							<td class="text-end">
-								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos">
-									<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
-								</button>
-							</td>
-						</tr>
+						@if (favorito.Libro != null) // Si el libro no se encuentra, no lo mostramos en la lista
+						{
+							<tr>
+								<td class="fw-semibold">@favorito.Libro.Titulo</td>
+								<td>
+									@if (favorito.FechaAgregado.HasValue)
+									{
+										@favorito.FechaAgregado.Value.ToString("dd/MM/yyyy")
+									}
+									else
+									{
+										<span class="text-muted">Sin fecha</span>
+									}
+								</td>
+								<td class="text-end">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos">
+										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
+									</button>
+								</td>
+							</tr>
+						}
 					}
 				</tbody>
 			</table>

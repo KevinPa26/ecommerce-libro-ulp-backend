@@ -1,3 +1,4 @@
+@using System.Diagnostics.Eventing.Reader
 @model IEnumerable<ecommerce_libro_ulp_backend.Models.Carrito>
 
 @{
@@ -37,28 +38,52 @@
 				<tbody>
 					@foreach (var carrito in carritos)
 					{
-						<tr>
-							<td class="fw-semibold">@carrito.Libro.Titulo</td>
-							<td>
-								@if (carrito.FechaAgregado.HasValue)
-								{
-									@carrito.FechaAgregado.Value.ToString("dd/MM/yyyy")
-								}
-								else
-								{
-									<span class="text-muted">Sin fecha</span>
-								}
-							</td>
-							<td>
-								<label class="visually-hidden" for="cantidad-@carrito.Id">Cantidad del libro @carrito.Libro.Titulo</label>
-								<input id="cantidad-@carrito.Id" class="form-control form-control-sm" type="number" min="1" value="@carrito.Cantidad" style="width: 6rem" />
-							</td>
-							<td class="text-end">
-								<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @carrito.Libro.Titulo del carrito">
-									<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
-								</button>
-							</td>
-						</tr>
+						@if (carrito.Libro != null)
+						{
+							<tr>
+								<td class="fw-semibold">@carrito.Libro.Titulo</td>
+								<td>
+									@if (carrito.FechaAgregado.HasValue)
+									{
+										@carrito.FechaAgregado.Value.ToString("dd/MM/yyyy")
+									}
+									else
+									{
+										<span class="text-muted">Sin fecha</span>
+									}
+								</td>
+								<td>
+									<label class="visually-hidden" for="cantidad-@carrito.Id">Cantidad del libro @carrito.Libro.Titulo</label>
+									<input id="cantidad-@carrito.Id" class="form-control form-control-sm" type="number" min="1" value="@carrito.Cantidad" style="width: 6rem" />
+								</td>
+								<td class="text-end">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @carrito.Libro.Titulo del carrito">
+										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
+									</button>
+								</td>
+							</tr>
+						} 
+						else
+						{
+							<tr>
+								<td class="fw-semibold">LIBRO @carrito.LibroId NO ENCONTRADO</td>
+								<td>
+									@if (carrito.FechaAgregado.HasValue)
+									{
+										@carrito.FechaAgregado.Value.ToString("dd/MM/yyyy")
+									}
+									else
+									{
+										<span class="text-muted">Sin fecha</span>
+									}
+								</td>
+								<td class="text-end">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar Libro @carrito.LibroId del carrito">
+										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
+									</button>
+								</td>
+							</tr>
+						}
 					}
 				</tbody>
 			</table>
