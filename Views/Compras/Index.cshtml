@@ -1,0 +1,154 @@
+@model IEnumerable<ecommerce_libro_ulp_backend.Models.Compra>
+
+@{
+    ViewData["Title"] = "Historial de Compras";
+}
+
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mis Compras</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm border-0 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark mb-0"><i class="bi bi-bag-check-fill text-primary"></i> Historial de Compras</h2>
+            <span class="text-muted">Resultados en esta página: <strong>@Model.Count()</strong></span>
+        </div>
+
+        <!-- SECCIÓN DE FILTROS POR FECHA -->
+        <div class="card bg-light border-0 p-3 mb-4">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                
+                <!-- Opción 1: Fecha Exacta -->
+                <div class="col-md-4">
+                    <label for="fechaExacta" class="form-label fw-semibold small text-secondary">Fecha Exacta</label>
+                    <input type="date" id="fechaExacta" name="fechaExacta" value="@ViewBag.FechaExacta" class="form-control" />
+                </div>
+
+                <!-- Opción 2: Rango (Desde) -->
+                <div class="col-md-3">
+                    <label for="desde" class="form-label fw-semibold small text-secondary">Desde</label>
+                    <input type="date" id="desde" name="desde" value="@ViewBag.Desde" class="form-control" />
+                </div>
+
+                <!-- Opción 3: Rango (Hasta) -->
+                <div class="col-md-3">
+                    <label for="hasta" class="form-label fw-semibold small text-secondary">Hasta</label>
+                    <input type="date" id="hasta" name="hasta" value="@ViewBag.Hasta" class="form-control" />
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold" title="Filtrar">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary" title="Limpiar filtros">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Si no hay compras -->
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted"></i>
+                <h4 class="text-secondary mt-3">No se encontraron compras</h4>
+                <p class="text-muted">Intenta cambiar las fechas de búsqueda o limpia los filtros para ver todo el historial.</p>
+                <a asp-action="Index" class="btn btn-outline-primary mt-2">
+                    <i class="bi bi-arrow-counterclockwise"></i> Ver todas las compras
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Tabla de Compras -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID Orden</th>
+                            <th>Fecha de Compra</th>
+                            <th>Total Pagado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var compra in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-secondary">#@compra.Id</td>
+                                <td>
+                                    <i class="bi bi-calendar3 text-muted me-1"></i> 
+                                    @compra.FechaCompra.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">
+                                        123
+                                        @* $@compra.Total.ToString("N2") *@
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@compra.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Ver detalle
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PAGINACIÓN DESDE EL SERVIDOR -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav aria-label="Paginación de compras" class="mt-4">
+                    <ul class="pagination justify-content-center mb-0">
+                        
+                        <!-- Botón Anterior -->
+                        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="@(ViewBag.CurrentPage - 1)" 
+                               asp-route-fechaExacta="@ViewBag.FechaExacta" 
+                               asp-route-desde="@ViewBag.Desde" 
+                               asp-route-hasta="@ViewBag.Hasta">
+                                Anterior
+                            </a>
+                        </li>
+
+                        <!-- Números de página -->
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-page="@i" 
+                                   asp-route-fechaExacta="@ViewBag.FechaExacta" 
+                                   asp-route-desde="@ViewBag.Desde" 
+                                   asp-route-hasta="@ViewBag.Hasta">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Botón Siguiente -->
+                        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="@(ViewBag.CurrentPage + 1)" 
+                               asp-route-fechaExacta="@ViewBag.FechaExacta" 
+                               asp-route-desde="@ViewBag.Desde" 
+                               asp-route-hasta="@ViewBag.Hasta">
+                                Siguiente
+                            </a>
+                        </li>
+
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
+</div>

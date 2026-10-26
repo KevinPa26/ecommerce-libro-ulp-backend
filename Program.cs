@@ -52,6 +52,7 @@ builder.Services.AddScoped<ILibroRepository, LibroRepository>();
 builder.Services.AddScoped<ICarritoRepository, CarritoRepository>();
 builder.Services.AddScoped<IFavoritoRepository, FavoritoRepository>();
 builder.Services.AddScoped<IImagenLibroRepository, ImagenLibroRepository>();
+builder.Services.AddScoped<ICompraRepository, CompraRepository>();
 
 // var connectionString = builder.Configuration
 //     .GetConnectionString("DefaultConnection");

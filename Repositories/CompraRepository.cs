@@ -29,41 +29,6 @@ public class CompraRepository : ICompraRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<List<Compra>> ObtenerPorFecha(DateTime fecha)
-	{
-		return await _context.Compras
-			.Where(c => c.FechaCompra.Equals(fecha))
-			.ToListAsync();
-	}
-
-	public async Task<List<Compra>> ObtenerPorFecha(DateTime desde, DateTime hasta)
-	{
-		return await _context.Compras
-			.Where(c => c.FechaCompra >= desde && c.FechaCompra <= hasta)
-			.ToListAsync();
-	}
-
-	public async Task<List<Compra>> ObtenerPorFecha(DateTime desde, DateTime hasta, Usuario usuario)
-	{
-		return await _context.Compras
-			.Where(c =>
-				c.FechaCompra >= desde &&
-				c.FechaCompra <= hasta &&
-				c.UsuarioId.Equals(usuario.Id)
-			)
-			.ToListAsync();
-	}
-
-	public async Task<List<Compra>> ObtenerPorFecha(DateTime fecha, Usuario usuario)
-	{
-		return await _context.Compras
-			.Where(c => 
-				c.FechaCompra.Equals(fecha) && 
-				c.UsuarioId.Equals(usuario.Id)
-			)
-			.ToListAsync();
-	}
-
 	public async Task<Compra?> ObtenerPorId(int id)
 	{
 		return await _context.Compras
@@ -71,15 +36,44 @@ public class CompraRepository : ICompraRepository
 			.FirstAsync();
 	}
 
-	public async Task<List<Compra>> ObtenerPorUsuarioId(int user_id)
-	{
-		return await _context.Compras
-			.Where(c => c.UsuarioId.Equals(user_id))
-			.ToListAsync();
-	}
-
 	public async Task<List<Compra>> ObtenerTodos()
 	{
 		return await _context.Compras.ToListAsync();
+	}
+
+	public async Task<(List<Compra> items, int TotalCount)> ObtenerTodos(
+		DateOnly? fechaExacta, 
+		DateOnly? desde, 
+		DateOnly? hasta, 
+		int pageNumber, 
+		int pageSize, 
+		int? usuarioId = null)
+	{
+		var query = _context.Compras.AsQueryable();
+
+		if (usuarioId.HasValue)
+		{
+			query = query.Where(c => c.UsuarioId == usuarioId.Value);
+		}
+
+		if (fechaExacta.HasValue)
+		{
+			query = query.Where(c => c.FechaCompra.Equals(fechaExacta.Value));
+		}
+		else if (desde.HasValue && hasta.HasValue)
+		{
+			query = query.Where(c => c.FechaCompra >= desde.Value && c.FechaCompra <= hasta.Value);
+		}
+
+		int totalCount = await query.CountAsync();
+
+		var items = await query
+			.OrderByDescending(c => c.FechaCompra)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
+			.ToListAsync();
+
+		// Se retorna la tupla con los dos valores
+		return (items, totalCount);
 	}
 }
