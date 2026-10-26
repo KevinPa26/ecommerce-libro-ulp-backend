@@ -41,7 +41,7 @@ public class CompraRepository : ICompraRepository
 		return await _context.Compras.ToListAsync();
 	}
 
-	public async Task<(List<Compra> items, int TotalCount)> ObtenerTodos(
+	public async Task<(List<Compra> Items, int TotalCount)> ObtenerTodos(
 		DateOnly? fechaExacta, 
 		DateOnly? desde, 
 		DateOnly? hasta, 

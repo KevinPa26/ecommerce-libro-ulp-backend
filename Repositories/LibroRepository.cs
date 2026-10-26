@@ -53,43 +53,57 @@ public class LibroRepository : ILibroRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<Libro>> ObtenerPorISBN(string isbn)
+    public async Task<(List<Libro> Items, int TotalCount)> ObtenerTodos(
+        string? titulo, 
+        string? autor, 
+        string? isbn, 
+        int? estado, 
+        int pageNumber, 
+        int pageSize)
     {
-        return await _context.Libros
-            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Isbn13 == isbn)
-            .ToListAsync();
-    }
+        var query = _context.Libros
+            .Include(l => l.Imagenes) // Incluimos las imágenes para las tarjetas
+            .AsQueryable();
 
-    public async Task<List<Libro>> ObtenerPorNombre(string nombre)
-    {
-        return await _context.Libros
-            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Titulo.Contains(nombre))
-            .ToListAsync();
-    }
-
-    public async Task<List<Libro>> ObtenerPorAutor(string autor)
-    {
-        return await _context.Libros
-            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Autor.Contains(autor))
-            .ToListAsync();
-    }
-
-    public async Task<List<Libro>> ObtenerPorVendedor(string vendedor)
-    {
-        if (int.TryParse(vendedor, out int vendedorId))
+        // 1. Filtro por Título
+        if (!string.IsNullOrWhiteSpace(titulo))
         {
-            return await _context.Libros
-                .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.VendedorId == vendedorId)
-                .ToListAsync();
+            string term = titulo.ToLower();
+            query = query.Where(l => l.Titulo != null && l.Titulo.ToLower().Contains(term));
         }
 
-        return new List<Libro>();
-    }
+        // 2. Filtro por Autor
+        if (!string.IsNullOrWhiteSpace(autor))
+        {
+            string term = autor.ToLower();
+            query = query.Where(l => l.Autor != null && l.Autor.ToLower().Contains(term));
+        }
 
-    public async Task<List<Libro>> ObtenerPorRangoDePrecios(decimal min, decimal max)
-    {
-        return await _context.Libros
-            .Where(l => !l.Estado.Equals(EstadoLibro.INACTIVO) && l.Precio >= min && l.Precio <= max)
+        // 3. Filtro por ISBN
+        if (!string.IsNullOrWhiteSpace(isbn))
+        {
+            string term = isbn.ToLower();
+            query = query.Where(l => l.Isbn13 != null && l.Isbn13.ToLower().Contains(term));
+        }
+
+        // 4. Filtro por Estado (Mapeando el entero recibido al Enum EstadoLibro)
+        if (estado.HasValue)
+        {
+            EstadoLibro estadoEnum = (EstadoLibro)estado.Value;
+            query = query.Where(l => l.Estado == estadoEnum);
+        }
+
+        // 5. Contar el total de registros filtrados antes de la paginación
+        int totalCount = await query.CountAsync();
+
+        // 6. Aplicar orden y paginación (Skip y Take)
+        var items = await query
+            .OrderByDescending(l => l.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        // 7. Retornar la tupla con nombre exacto
+        return (items, totalCount);
     }
 }

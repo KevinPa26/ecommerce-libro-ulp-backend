@@ -19,34 +19,30 @@ namespace ecommerce_libro_ulp_backend.Controllers
         }
 
         // GET: Libros
-        public async Task<IActionResult> Index(string buscarPor, string termino)
+        public async Task<IActionResult> Index(string? titulo, string? autor, string? isbn, int? estado, int page = 1)
         {
-            try
-            {
-                List<Libro> libros;
+            int pageSizeReal = 8; // Múltiplo de 4 para que encaje perfecto en la grilla de tarjetas
 
-                // Aprovechamos los filtros de tu repositorio si el usuario realiza una búsqueda
-                if (!string.IsNullOrEmpty(termino))
-                {
-                    libros = buscarPor switch
-                    {
-                        "Autor" => await _libroRepository.ObtenerPorAutor(termino),
-                        "ISBN" => await _libroRepository.ObtenerPorISBN(termino),
-                        _ => await _libroRepository.ObtenerPorNombre(termino), // Por defecto busca por título/nombre
-                    };
-                }
-                else
-                {
-                    libros = await _libroRepository.ObtenerTodos();
-                }
-
-                return View(libros);
-            }
-            catch (Exception ex)
+            if (!User.IsInRole("Admin"))
             {
-                _logger.LogError(ex, "Error al obtener el listado de libros.");
-                return View("Error");
+                estado = 0; 
             }
+
+            var resultado = await _libroRepository.ObtenerTodos(
+                titulo, autor, isbn, estado, page, pageSizeReal
+            );
+
+            int totalPages = (int)Math.Ceiling(resultado.TotalCount / (double)pageSizeReal);
+
+            ViewBag.Titulo = titulo;
+            ViewBag.Autor = autor;
+            ViewBag.Isbn = isbn;
+            ViewBag.Estado = estado;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages == 0 ? 1 : totalPages;
+            ViewBag.TotalRegistros = resultado.TotalCount;
+
+            return View(resultado.Items);
         }
 
         // GET: Libros/Details/5
