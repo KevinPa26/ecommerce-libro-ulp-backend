@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
+using System.Net.Mail;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
     public class CarritosController : Controller
     {
         private readonly ICarritoRepository _carritoRepository;
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILibroRepository _libroRepository;
         private readonly ILogger<CarritosController> _logger;
 
-        public CarritosController(ICarritoRepository carritoRepository, ILogger<CarritosController> logger)
+        public CarritosController(ICarritoRepository carritoRepository, IUsuarioRepository usuarioRepository, ILibroRepository libroRepository, ILogger<CarritosController> logger)
         {
             _carritoRepository = carritoRepository;
+            _usuarioRepository = usuarioRepository;
+            _libroRepository = libroRepository;
             _logger = logger;
         }
 
@@ -88,6 +93,41 @@ namespace ecommerce_libro_ulp_backend.Controllers
             }
 
             return View(carrito);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Crear(int usuario_id, int libro_id, int cantidad)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    Usuario usuario = await _usuarioRepository.ObtenerPorId(usuario_id) ?? throw new Exception("Usuario no encontrado");
+                    Libro libro = await _libroRepository.ObtenerPorId(libro_id) ?? throw new Exception("Libro no encontrado");
+                    if (cantidad > libro.Stock) throw new InvalidOperationException("Cantidad excede el stock");
+
+					Carrito carrito = new()
+					{
+						UsuarioId = usuario_id,
+						LibroId = libro_id,
+						Usuario = usuario,
+						Libro = libro,
+						Cantidad = cantidad
+					};
+
+                    await _carritoRepository.Crear(carrito);
+                    _logger.LogInformation("Carrito creado exitosamente para el usuario con ID {usuario_id}, el libro con ID {libro_id} y la cantidad {cantidad}.", usuario_id, libro_id, cantidad);
+				}
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al intentar crear un nuevo carrito con datos ({usuario_id}, {libro_id}, {cantidad})", usuario_id, libro_id, cantidad);
+                    ModelState.AddModelError("", "No se pudo guardar el carrito. Intentelo nuevamente.");
+                    return BadRequest();
+                }
+            }
+            
+            return Ok();
         }
 
         // GET: Carritos/Editar/5
