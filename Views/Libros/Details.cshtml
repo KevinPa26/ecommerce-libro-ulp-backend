@@ -5,6 +5,7 @@
 }
 
 <div id="app" class="container mt-4 mb-5">
+    @Html.AntiForgeryToken()
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb mb-1">
@@ -85,7 +86,7 @@
                     <button class="py-2 btn btn-primary btn-lg fw-bold shadow-sm" @@click="comprarAhora" :disabled="libro.Stock <= 0">
                         <i class="bi bi-lightning-charge-fill"></i> Comprar ahora
                     </button>
-                    <button class="py-2 btn btn-outline-primary btn-lg fw-semibold" @@click="agregarAlCarrito" :disabled="libro.Stock <= 0">
+                    <button class="py-2 btn btn-outline-primary btn-lg fw-semibold" @@click="agregarAlCarrito" :disabled="libro.Stock <= 0 || agregando">
                         <i class="bi bi-cart-plus"></i> Agregar al carrito
                     </button>
                     <button class="btn btn-outline-danger" @@click="toggleFavorito">
@@ -143,7 +144,8 @@
             return {
                 libro: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)),
                 imagenActiva: '',
-                esFavorito: false
+                esFavorito: false,
+                agregando: false
             }
         },
         computed: {
@@ -165,7 +167,67 @@
                 alert(`¡Redirigiendo al proceso de pago para el libro: ${this.libro.Titulo}!`);
             },
             agregarAlCarrito() {
-                alert(`"${this.libro.Titulo}" se ha agregado a tu carrito de compras.`);
+                if (this.libro.Stock <= 0 || this.agregando) return;
+
+                const token = sessionStorage.getItem("jwt");
+                if (!token) {
+                    alert("Debés iniciar sesión para agregar el libro al carrito.");
+                    return;
+                }
+
+                let usuarioId;
+                try {
+                    const payload = JSON.parse(atob(token.split(".")[1]));
+                    usuarioId = parseInt(
+                        payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+                        payload.nameid ||
+                        payload.sub,
+                        10
+                    );
+                } catch (e) {
+                    alert("No se pudo obtener el usuario de la sesión.");
+                    return;
+                }
+
+                if (!usuarioId) {
+                    alert("No se pudo identificar al usuario. Iniciá sesión nuevamente.");
+                    return;
+                }
+
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const requestToken = tokenInput ? tokenInput.value : "";
+
+                const form = new URLSearchParams();
+                form.append("usuario_id", usuarioId);
+                form.append("libro_id", this.libro.Id);
+                form.append("cantidad", 1);
+                if (requestToken) form.append("__RequestVerificationToken", requestToken);
+
+                this.agregando = true;
+
+                fetch("/Carritos/Crear", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Accept": "application/json"
+                    },
+                    body: form
+                })
+                .then(async (response) => {
+                    this.agregando = false;
+                    if (response.ok) {
+                        alert(`"${this.libro.Titulo}" se agregó al carrito.`);
+                    } else {
+                        const texto = await response.text();
+                        throw new Error(texto || `Error ${response.status}`);
+                    }
+                })
+                .catch((error) => {
+                    this.agregando = false;
+                    console.error(error);
+                    alert("No se pudo agregar el libro al carrito: " + error.message);
+                });
             },
             toggleFavorito() {
                 this.esFavorito = !this.esFavorito;
