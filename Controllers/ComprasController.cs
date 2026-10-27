@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using ecommerce_libro_ulp_backend.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
@@ -52,6 +53,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(compra);
         }
 
+        [Authorize(Roles = "USUARIO")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear([FromBody] List<DetalleCompra> detalles)

@@ -57,9 +57,18 @@
     const contenido = document.getElementById("contenidoPerfil");
     const error = document.getElementById("errorPerfil");
 
-    function cerrarSesion() {
-        sessionStorage.removeItem("jwt");
-        window.location.replace("/Auth/Login");
+    async function cerrarSesion() {
+        try {
+            await fetch("/account/logout", {
+                method: "POST",
+                credentials: "same-origin"
+            });
+
+            sessionStorage.removeItem("jwt");
+            window.location.replace("/account/login");
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+        }
     }
 
     document.getElementById("btnLogout").addEventListener(

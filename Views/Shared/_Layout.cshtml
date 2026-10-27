@@ -123,11 +123,14 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Compras" asp-action="Index">
-                                <i class="bi bi-book"></i>Compras
+                        
+                        <li class="nav-item d-none" id="itemCompras">
+                            <a class="nav-link"
+                            asp-controller="Compras" asp-action="Index">
+                                <i class="bi bi-bag-check"></i>Compras
                             </a>
                         </li>
+
 
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Privacy">
@@ -191,69 +194,100 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        (() => {
-            const login = document.getElementById("itemLogin");
-            const registro = document.getElementById("itemRegistro");
-            const perfil = document.getElementById("itemPerfil");
-            const logout = document.getElementById("itemLogout");
-            const usuarios = document.getElementById("navUsuarios");
+        
+    (() => {
+        const login = document.getElementById("itemLogin");
+        const registro = document.getElementById("itemRegistro");
+        const perfil = document.getElementById("itemPerfil");
+        const logout = document.getElementById("itemLogout");
+        const usuarios = document.getElementById("navUsuarios");
+        const compras = document.getElementById("itemCompras");
 
-            function mostrarAutenticado(autenticado) {
-                login?.classList.toggle("d-none", autenticado);
-                registro?.classList.toggle("d-none", autenticado);
-                perfil?.classList.toggle("d-none", !autenticado);
-                logout?.classList.toggle("d-none", !autenticado);
+        function mostrarAutenticado(autenticado) {
+            login?.classList.toggle("d-none", autenticado);
+            registro?.classList.toggle("d-none", autenticado);
+            perfil?.classList.toggle("d-none", !autenticado);
+            logout?.classList.toggle("d-none", !autenticado);
+        }
+
+        function mostrarRol(rol) {
+            const rolNormalizado = String(rol ?? "").trim().toUpperCase();
+
+            usuarios?.classList.toggle(
+                "d-none",
+                rolNormalizado !== "ADMIN"
+            );
+
+            compras?.classList.toggle(
+                "d-none",
+                rolNormalizado !== "USUARIO"
+            );
+        }
+
+        async function actualizarMenu() {
+            mostrarAutenticado(false);
+            mostrarRol("");
+
+            try {
+                const response = await fetch("/api/account/me", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const usuario = data.usuario ?? data.Usuario ?? data;
+
+                const rol = usuario.rol ?? usuario.Rol ?? "";
+
+                mostrarAutenticado(true);
+                mostrarRol(rol);
+
+            } catch (error) {
+                console.error(
+                    "Error al consultar la sesión:",
+                    error
+                );
             }
+        }
 
-            async function actualizarMenu() {
-                const token = sessionStorage.getItem("jwt");
-
-                mostrarAutenticado(Boolean(token));
-                usuarios?.classList.add("d-none");
-
-                if (!token) return;
-
+        document.getElementById("navLogout")
+            ?.addEventListener("click", async () => {
                 try {
-                    const response = await fetch("/api/account/me", {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${token}`,
-                            "Accept": "application/json"
-                        }
+                    const response = await fetch("/api/account/logout", {
+                        method: "POST",
+                        credentials: "same-origin"
                     });
 
-                    if (response.status === 401) {
-                        sessionStorage.removeItem("jwt");
-                        mostrarAutenticado(false);
+                    if (!response.ok) {
+                        console.error("No se pudo cerrar la sesión.");
                         return;
                     }
 
-                    if (!response.ok) return;
+                    sessionStorage.removeItem("jwt");
 
-                    const data = await response.json();
-                    const usuario = data.usuario ?? data.Usuario ?? data;
-                    const rol = String(
-                        usuario.rol ?? usuario.Rol ?? ""
-                    ).toUpperCase();
+                    mostrarAutenticado(false);
+                    mostrarRol("");
 
-                    // El rol se obtiene de la API, no de datos editables
-                    // almacenados en el navegador.
-                    usuarios?.classList.toggle("d-none", rol !== "ADMIN");
+                    window.location.replace("/Auth/Login");
+
                 } catch (error) {
-                    // Si falla la consulta, el acceso administrativo
-                    // permanece oculto.
-                    usuarios?.classList.add("d-none");
-                    console.error("No se pudo verificar el rol del usuario.");
+                    console.error(
+                        "Error al cerrar sesión:",
+                        error
+                    );
                 }
-            }
-
-            document.getElementById("navLogout")?.addEventListener("click", () => {
-                sessionStorage.removeItem("jwt");
-                window.location.assign("/Auth/Login");
             });
 
-            actualizarMenu();
-        })();
+        actualizarMenu();
+    })();
+
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

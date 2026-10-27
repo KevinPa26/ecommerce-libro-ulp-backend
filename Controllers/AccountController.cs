@@ -1,4 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using System.Text;
 using ecommerce_libro_ulp_backend.DTOs.Auth;
@@ -43,7 +45,8 @@ public class AccountController : ControllerBase
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(3 * 1024 * 1024)]
     public async Task<IActionResult> Registrar(
-        [FromForm] RegistroRequest request)
+        [FromForm] RegistroRequest request,
+        [FromQuery] string? redirectUrl = null)
     {
         var email = request.Email.Trim();
 
@@ -56,6 +59,7 @@ public class AccountController : ControllerBase
         }
 
         string? rutaAvatar = null;
+        Usuario usuario;
 
         try
         {
@@ -74,7 +78,7 @@ public class AccountController : ControllerBase
                 rutaAvatar = resultadoAvatar.Ruta;
             }
 
-            var usuario = new Usuario
+            usuario = new Usuario
             {
                 Nombre = request.Nombre.Trim(),
                 Email = email,
@@ -87,13 +91,9 @@ public class AccountController : ControllerBase
             };
 
             await _usuarioRepository.Crear(usuario);
-
-            return Ok(CrearRespuestaAutenticacion(usuario));
         }
         catch (DbUpdateException)
         {
-            // La restricción UNIQUE de la base de datos sigue siendo
-            // la protección definitiva ante registros simultáneos.
             if (rutaAvatar is not null)
             {
                 EliminarArchivoAvatar(rutaAvatar);
@@ -113,13 +113,54 @@ public class AccountController : ControllerBase
 
             throw;
         }
+
+        // Generamos el JWT para mantener compatibilidad con los clientes API.
+        var respuesta = CrearRespuestaAutenticacion(usuario);
+
+        // Creamos la cookie de autenticación para la aplicación MVC.
+        var claims = CrearClaims(usuario);
+
+        var identidad = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
+        var principal = new ClaimsPrincipal(identidad);
+
+        var propiedades = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+            AllowRefresh = true
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            propiedades
+        );
+
+        // Solo aceptamos destinos locales para evitar redirecciones externas.
+        if (!string.IsNullOrWhiteSpace(redirectUrl) &&
+            Url.IsLocalUrl(redirectUrl))
+        {
+            return Ok(new
+            {
+                respuesta,
+                redirectUrl
+            });
+        }
+
+        return Ok(respuesta);
     }
+
 
     // POST: api/account/login
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login(
-        [FromBody] LoginRequest request)
+        [FromBody] LoginRequest request,
+        [FromQuery] string? redirectUrl = null)
     {
         var email = request.Email.Trim();
 
@@ -137,7 +178,76 @@ public class AccountController : ControllerBase
             });
         }
 
-        return Ok(CrearRespuestaAutenticacion(usuario));
+        // Generamos el JWT como hasta ahora.
+        var respuesta = CrearRespuestaAutenticacion(usuario);
+
+        // Creamos la identidad para la cookie con las mismas claims.
+        var claims = CrearClaims(usuario);
+
+        var identidad = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
+        var principal = new ClaimsPrincipal(identidad);
+
+        var propiedades = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+            AllowRefresh = true
+        };
+
+        // El navegador recibirá la cookie de autenticación.
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            propiedades
+        );
+
+        // Si se proporcionó un destino local válido, lo devolvemos.
+        if (!string.IsNullOrWhiteSpace(redirectUrl) &&
+            Url.IsLocalUrl(redirectUrl))
+        {
+            return Ok(new
+            {
+                respuesta,
+                redirectUrl
+            });
+        }
+
+        // Conservamos el comportamiento actual para clientes que usan JWT.
+        return Ok(respuesta);
+    }
+
+
+    private List<Claim> CrearClaims(Usuario usuario)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                usuario.Id.ToString()),
+
+            new Claim(
+                ClaimTypes.Name,
+                usuario.Nombre),
+
+            new Claim(
+                ClaimTypes.Email,
+                usuario.Email),
+
+            new Claim(
+                ClaimTypes.Role,
+                usuario.Rol.ToString())
+        };
+
+        if (!string.IsNullOrWhiteSpace(usuario.Avatar))
+        {
+            claims.Add(new Claim("avatar", usuario.Avatar));
+        }
+
+        return claims;
     }
 
     // GET: api/account/me
@@ -205,29 +315,7 @@ public class AccountController : ControllerBase
         var ahora = DateTime.UtcNow;
         var expiraEn = ahora.AddMinutes(expiracionMinutos);
 
-        var claims = new List<Claim>
-        {
-            new(
-                ClaimTypes.NameIdentifier,
-                usuario.Id.ToString()),
-
-            new(
-                ClaimTypes.Name,
-                usuario.Nombre),
-
-            new(
-                ClaimTypes.Email,
-                usuario.Email),
-
-            new(
-                ClaimTypes.Role,
-                usuario.Rol.ToString())
-        };
-
-        if (!string.IsNullOrWhiteSpace(usuario.Avatar))
-        {
-            claims.Add(new Claim("avatar", usuario.Avatar));
-        }
+        var claims = CrearClaims(usuario);
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(secret));
@@ -353,5 +441,15 @@ public class AccountController : ControllerBase
             // No ocultamos el resultado de la operación principal
             // por un error al limpiar un archivo temporal.
         }
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
+        return Ok(new { mensaje = "Sesión cerrada correctamente." });
     }
 }

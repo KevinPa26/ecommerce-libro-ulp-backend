@@ -1,6 +1,14 @@
 
 @{
     ViewData["Title"] = "Crear cuenta";
+
+    var redirectUrl = Context.Request.Query["ReturnUrl"].ToString();
+
+    if (string.IsNullOrWhiteSpace(redirectUrl) ||
+        !Url.IsLocalUrl(redirectUrl))
+    {
+        redirectUrl = "";
+    }
 }
 
 <div class="container py-5">
@@ -84,6 +92,7 @@
     </div>
 </div>
 
+
 @section Scripts {
 <script>
 (() => {
@@ -92,6 +101,10 @@
     const boton = document.getElementById("btnRegistro");
     const avatar = document.getElementById("avatar");
     const vistaPrevia = document.getElementById("vistaPrevia");
+
+    const redirectUrl = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(redirectUrl)
+    );
 
     function mostrarMensaje(texto, tipo = "danger") {
         mensaje.textContent = texto;
@@ -108,7 +121,9 @@
         }
 
         const tiposPermitidos = [
-            "image/jpeg", "image/png", "image/webp"
+            "image/jpeg",
+            "image/png",
+            "image/webp"
         ];
 
         if (!tiposPermitidos.includes(archivo.type) ||
@@ -116,7 +131,10 @@
             avatar.value = "";
             vistaPrevia.removeAttribute("src");
             vistaPrevia.classList.add("d-none");
-            mostrarMensaje("Elegí una imagen JPG, PNG o WEBP de hasta 2 MB.");
+
+            mostrarMensaje(
+                "Elegí una imagen JPG, PNG o WEBP de hasta 2 MB."
+            );
             return;
         }
 
@@ -130,7 +148,8 @@
         mensaje.className = "alert d-none";
 
         const password = document.getElementById("password").value;
-        const confirmar = document.getElementById("confirmarPassword").value;
+        const confirmar =
+            document.getElementById("confirmarPassword").value;
 
         if (password !== confirmar) {
             mostrarMensaje("Las contraseñas no coinciden.");
@@ -142,9 +161,18 @@
 
         try {
             const datos = new FormData(form);
+            const url = new URL(
+                "/api/account/register",
+                window.location.origin
+            );
 
-            const respuesta = await fetch("/api/account/register", {
+            if (redirectUrl) {
+                url.searchParams.set("redirectUrl", redirectUrl);
+            }
+
+            const respuesta = await fetch(url.toString(), {
                 method: "POST",
+                credentials: "same-origin",
                 body: datos
             });
 
@@ -159,14 +187,28 @@
                 return;
             }
 
-            if (!data.token) {
-                mostrarMensaje("La cuenta se creó, pero no se recibió el token. Iniciá sesión.");
+            const auth = data.respuesta ?? data;
+
+            if (!auth.token) {
+                mostrarMensaje(
+                    "La cuenta se creó, pero no se recibió el token."
+                );
                 return;
             }
 
-            sessionStorage.setItem("jwt", data.token);
-            window.location.assign("/Auth/Perfil");
-        } catch {
+            sessionStorage.setItem("jwt", auth.token);
+
+            const destino =
+                data.redirectUrl &&
+                data.redirectUrl.startsWith("/") &&
+                !data.redirectUrl.startsWith("//")
+                    ? data.redirectUrl
+                    : redirectUrl || "/Auth/Perfil";
+
+            window.location.assign(destino);
+
+        } catch (error) {
+            console.error("Error al registrar la cuenta:", error);
             mostrarMensaje("No se pudo conectar con el servidor.");
         } finally {
             boton.disabled = false;
@@ -176,3 +218,4 @@
 })();
 </script>
 }
+

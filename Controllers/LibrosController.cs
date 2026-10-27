@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
@@ -78,7 +80,11 @@ namespace ecommerce_libro_ulp_backend.Controllers
         public async Task<IActionResult> Crear(Libro libro, List<IFormFile> archivosFotos)
         {
             // 1. Obtener el ID del usuario logueado actual desde los claims
-            // var usuarioIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var estaAutenticado = User.Identity?.IsAuthenticated;
+            var tipoAutenticacion = User.Identity?.AuthenticationType;
+            var usuarioIdString = User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
             
             // if (int.TryParse(usuarioIdString, out int vendedorIdLogueado))
             // {

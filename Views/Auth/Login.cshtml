@@ -1,6 +1,14 @@
 
 @{
     ViewData["Title"] = "Iniciar sesión";
+
+    var redirectUrl = Context.Request.Query["ReturnUrl"].ToString();
+
+    if (string.IsNullOrWhiteSpace(redirectUrl) ||
+        !Url.IsLocalUrl(redirectUrl))
+    {
+        redirectUrl = "";
+    }
 }
 
 <div class="container py-5">
@@ -57,10 +65,16 @@
 
 @section Scripts {
 <script>
+
 (() => {
     const form = document.getElementById("formLogin");
     const mensaje = document.getElementById("mensaje");
     const boton = document.getElementById("btnLogin");
+
+    // Destino recibido desde la URL de la vista.
+    const redirectUrl = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(redirectUrl)
+    );
 
     function mostrarMensaje(texto, tipo = "danger") {
         mensaje.textContent = texto;
@@ -69,14 +83,25 @@
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
         mensaje.className = "alert d-none";
         boton.disabled = true;
         boton.textContent = "Ingresando...";
 
         try {
-            const respuesta = await fetch("/api/account/login", {
+            const url = new URL("/api/account/login", window.location.origin);
+
+            if (redirectUrl) {
+                url.searchParams.set("redirectUrl", redirectUrl);
+            }
+
+            const respuesta = await fetch(url.toString(), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify({
                     email: document.getElementById("email").value.trim(),
                     password: document.getElementById("password").value
@@ -86,18 +111,36 @@
             const data = await respuesta.json();
 
             if (!respuesta.ok) {
-                mostrarMensaje(data.mensaje || "No se pudo iniciar sesión.");
+                mostrarMensaje(
+                    data.mensaje ?? "No se pudo iniciar sesión."
+                );
                 return;
             }
 
-            if (!data.token) {
-                mostrarMensaje("El servidor no devolvió un token válido.");
+            // El endpoint puede devolver el DTO directamente
+            // o dentro de la propiedad "respuesta".
+            const auth = data.respuesta ?? data;
+
+            if (!auth.token) {
+                mostrarMensaje(
+                    "El servidor no devolvió un token válido."
+                );
                 return;
             }
 
-            sessionStorage.setItem("jwt", data.token);
-            window.location.assign("/Auth/Perfil");
-        } catch {
+            sessionStorage.setItem("jwt", auth.token);
+
+            const destino =
+                data.redirectUrl &&
+                data.redirectUrl.startsWith("/") &&
+                !data.redirectUrl.startsWith("//")
+                    ? data.redirectUrl
+                    : redirectUrl || "/Auth/Perfil";
+
+            window.location.assign(destino);
+
+        } catch (error) {
+            console.error("Error al iniciar sesión:", error);
             mostrarMensaje("No se pudo conectar con el servidor.");
         } finally {
             boton.disabled = false;
@@ -105,5 +148,6 @@
         }
     });
 })();
+
 </script>
 }
