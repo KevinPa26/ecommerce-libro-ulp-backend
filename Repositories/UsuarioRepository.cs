@@ -97,4 +97,48 @@ public class UsuarioRepository : IUsuarioRepository
 
 		return usuario;
 	}
+
+	public async Task<(List<Usuario> Items, int TotalCount)> ObtenerPaginados(
+		string? busqueda,
+		RolUsuario? rol,
+		EstadoUsuario? estado,
+		int pageNumber,
+		int pageSize)
+	{
+		var query = _context.Usuarios.AsNoTracking().AsQueryable();
+
+		// 1. Filtro por nombre o email
+		if (!string.IsNullOrWhiteSpace(busqueda))
+		{
+			string termino = busqueda.Trim().ToLower();
+
+			query = query.Where(u =>
+				u.Nombre.ToLower().Contains(termino) ||
+				u.Email.ToLower().Contains(termino));
+		}
+
+		// 2. Filtro por rol
+		if (rol.HasValue)
+		{
+			query = query.Where(u => u.Rol == rol.Value);
+		}
+
+		// 3. Filtro por estado
+		if (estado.HasValue)
+		{
+			query = query.Where(u => u.Estado == estado.Value);
+		}
+
+		// 4. Contar antes de aplicar la paginación
+		int totalCount = await query.CountAsync();
+
+		// 5. Ordenar y traer solamente los registros de la página
+		var items = await query
+			.OrderByDescending(u => u.Id)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
+			.ToListAsync();
+
+		return (items, totalCount);
+	}
 }

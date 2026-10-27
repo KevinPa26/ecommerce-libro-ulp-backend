@@ -23,17 +23,60 @@ namespace ecommerce_libro_ulp_backend.Controllers
         }
 
         // GET: Usuarios
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? busqueda,
+            RolUsuario? rol,
+            EstadoUsuario? estado,
+            int page = 1)
         {
             try
             {
-                var usuarios = await _usuarioRepository.ObtenerTodos();
-                return View(usuarios);
+                const int pageSize = 5;
+
+                page = Math.Max(1, page);
+
+                var resultado = await _usuarioRepository.ObtenerPaginados(
+                    busqueda,
+                    rol,
+                    estado,
+                    page,
+                    pageSize
+                );
+
+                int totalPages = (int)Math.Ceiling(
+                    resultado.TotalCount / (double)pageSize
+                );
+
+                totalPages = Math.Max(1, totalPages);
+
+                // Si solicitan una página fuera de rango, usamos la última válida.
+                if (page > totalPages)
+                {
+                    page = totalPages;
+
+                    resultado = await _usuarioRepository.ObtenerPaginados(
+                        busqueda,
+                        rol,
+                        estado,
+                        page,
+                        pageSize
+                    );
+                }
+
+                ViewBag.Busqueda = busqueda;
+                ViewBag.Rol = rol;
+                ViewBag.Estado = estado;
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalRegistros = resultado.TotalCount;
+
+                return View(resultado.Items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error...");
-    
+                _logger.LogError(ex, "Error al obtener usuarios paginados.");
+
                 var errorModel = new ErrorViewModel
                 {
                     RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
