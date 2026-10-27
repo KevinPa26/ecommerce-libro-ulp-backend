@@ -5,11 +5,15 @@
 }
 
 <div id="app" class="container mt-4 mb-5">
+    
+    <!-- Token oculto para AntiForgeryToken en peticiones fetch -->
+    @Html.AntiForgeryToken()
+
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb mb-1">
             <li class="breadcrumb-item"><a href="/">Inicio</a></li>
-            <li class="breadcrumb-item"><a asp-action="Index">Catálogo</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Libros" asp-action="Index">Catálogo</a></li>
             <li class="breadcrumb-item active" aria-current="page">Detalles del Libro</li>
         </ol>
     </nav>
@@ -17,11 +21,11 @@
     <div class="card shadow-sm border-0 p-4">
         <div class="row g-4">
             
-            <!-- SECCIÓN DE IMÁGENES (Estilo MercadoLibre: Miniaturas a la izquierda + Imagen Grande) -->
+            <!-- SECCIÓN DE IMÁGENES (Estilo MercadoLibre) -->
             <div class="col-md-7">
                 <div class="d-flex flex-column flex-md-row gap-3">
                     
-                    <!-- Columna de Miniaturas Seleccionables (Se agregó flex-shrink-0 para evitar que la pisen) -->
+                    <!-- Columna de Miniaturas Seleccionables -->
                     <div class="d-flex flex-row flex-md-column gap-2 overflow-auto order-2 order-md-1 flex-shrink-0" style="max-height: 450px; width: fit-content;">
                         <div v-for="(img, index) in libro.Imagenes" :key="img.Id || index" 
                              @@click="imagenActiva = img.Path"
@@ -32,7 +36,7 @@
                         </div>
                     </div>
 
-                    <!-- Visualizador de Imagen Grande (Se agregó min-width: 0 para contener el flex-grow) -->
+                    <!-- Visualizador de Imagen Grande -->
                     <div class="flex-grow-1 border rounded p-3 text-center bg-light d-flex align-items-center justify-content-center position-relative order-1 order-md-2" style="height: 450px; min-width: 0;">
                         <!-- Badge de Principal -->
                         <span class="position-absolute top-0 start-0 m-3 badge bg-secondary" v-if="esImagenPrincipal">
@@ -74,18 +78,38 @@
                 </div>
 
                 <!-- Stock Disponibilidad -->
-                <div class="mb-4">
+                <div class="mb-2">
                     <span :class="libro.Stock > 0 ? 'text-info fw-semibold' : 'text-danger'">
                         <i class="bi bi-boxes"></i> Stock disponible: <strong>{{ libro.Stock }} unidades</strong>
                     </span>
                 </div>
 
+                <!-- NUEVO: Input de Cantidad con Validación -->
+                <div class="mb-4" v-if="libro.Stock > 0">
+                    <label for="cantidad" class="form-label fw-semibold small text-secondary">Cantidad:</label>
+                    <div class="input-group" style="max-width: 160px;">
+                        <input type="number" 
+                               id="cantidad" 
+                               v-model.number="cantidad" 
+                               @@change="validarCantidad" 
+                               @@input="validarCantidad" 
+                               class="form-control text-center fw-bold" 
+                               min="1" 
+                               :max="libro.Stock" />
+                    </div>
+                    <small class="text-danger mt-1 d-block" v-if="errorCantidad">
+                        {{ errorCantidad }}
+                    </small>
+                </div>
+
                 <!-- Botones de Acción -->
                 <div class="d-grid gap-2 mb-4">
-                    <button class="py-2 btn btn-primary btn-lg fw-bold shadow-sm" @@click="comprarAhora" :disabled="libro.Stock <= 0">
-                        <i class="bi bi-lightning-charge-fill"></i> Comprar ahora
+                    <button class="py-2 btn btn-primary btn-lg fw-bold shadow-sm" @@click="comprarAhora" :disabled="libro.Stock <= 0 || procesando || cantidad < 1 || cantidad > libro.Stock">
+                        <span v-if="procesando" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-lightning-charge-fill" v-if="!procesando"></i> 
+                        {{ procesando ? 'Procesando compra...' : 'Comprar ahora' }}
                     </button>
-                    <button class="py-2 btn btn-outline-primary btn-lg fw-semibold" @@click="agregarAlCarrito" :disabled="libro.Stock <= 0">
+                    <button class="py-2 btn btn-outline-primary btn-lg fw-semibold" @@click="agregarAlCarrito" :disabled="libro.Stock <= 0 || cantidad < 1 || cantidad > libro.Stock">
                         <i class="bi bi-cart-plus"></i> Agregar al carrito
                     </button>
                     <button class="btn btn-outline-danger" @@click="toggleFavorito">
@@ -94,7 +118,7 @@
                     </button>
                 </div>
 
-                <!-- Descripción del Vendedor -->
+                <!-- Información del Vendedor -->
                 <div class="card bg-light border-0 p-3 mt-auto">
                     <h6 class="fw-bold text-secondary mb-1"><i class="bi bi-info-circle"></i> Información del Vendedor</h6>
                     <p class="small text-muted mb-0">
@@ -143,7 +167,10 @@
             return {
                 libro: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)),
                 imagenActiva: '',
-                esFavorito: false
+                esFavorito: false,
+                procesando: false,
+                cantidad: 1, // Cantidad inicial por defecto
+                errorCantidad: ''
             }
         },
         computed: {
@@ -154,26 +181,83 @@
             }
         },
         mounted() {
-            // Inicializar la imagen activa por defecto con la principal o la primera de la lista
             if (this.libro.Imagenes && this.libro.Imagenes.length > 0) {
                 const principal = this.libro.Imagenes.find(img => img.EsPrincipal);
                 this.imagenActiva = principal ? principal.Path : this.libro.Imagenes[0].Path;
             }
         },
         methods: {
-            comprarAhora() {
-                alert(`¡Redirigiendo al proceso de pago para el libro: ${this.libro.Titulo}!`);
+            validarCantidad() {
+                this.errorCantidad = '';
+                if (!this.cantidad || this.cantidad < 1) {
+                    this.errorCantidad = 'La cantidad mínima es 1.';
+                    this.cantidad = 1;
+                } else if (this.cantidad > this.libro.Stock) {
+                    this.errorCantidad = `La cantidad no puede superar el stock disponible (${this.libro.Stock}).`;
+                    this.cantidad = this.libro.Stock;
+                }
+            },
+            async comprarAhora() {
+                this.validarCantidad();
+                if (this.errorCantidad) return;
+
+                if (this.libro.Stock <= 0) {
+                    alert('Lo sentimos, este libro no tiene stock disponible.');
+                    return;
+                }
+
+                if (!confirm(`¿Confirmas la compra de ${this.cantidad} unidad(es) de "${this.libro.Titulo}"?`)) {
+                    return;
+                }
+
+                this.procesando = true;
+
+                // Estructura enviando la cantidad seleccionada por el usuario
+                const detalles = [
+                    {
+                        LibroId: this.libro.Id,
+                        Cantidad: this.cantidad
+                    }
+                ];
+
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]'); // ver luego
+                const token = tokenElement ? tokenElement.value : '';
+
+                try {
+                    const response = await fetch('/Compras/Crear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify(detalles)
+                    });
+
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else if (response.ok) {
+                        alert('¡Compra realizada con éxito!');
+                        window.location.href = '/Compras/Index';
+                    } else {
+                        const errorTexto = await response.text();
+                        alert('No se pudo procesar la compra: ' + errorTexto);
+                        this.procesando = false;
+                    }
+                } catch (error) {
+                    console.error('Error de red:', error);
+                    alert('Ocurrió un error al conectar con el servidor.');
+                    this.procesando = false;
+                }
             },
             agregarAlCarrito() {
-                alert(`"${this.libro.Titulo}" se ha agregado a tu carrito de compras.`);
+                this.validarCantidad();
+                if (this.errorCantidad) return;
+
+                alert(`Se han agregado ${this.cantidad} unidad(es) de "${this.libro.Titulo}" a tu carrito de compras.`);
             },
             toggleFavorito() {
                 this.esFavorito = !this.esFavorito;
-                if (this.esFavorito) {
-                    alert('Agregado a tus favoritos.');
-                } else {
-                    alert('Eliminado de tus favoritos.');
-                }
+                alert(this.esFavorito ? 'Agregado a tus favoritos.' : 'Eliminado de tus favoritos.');
             }
         }
     }).mount('#app');
