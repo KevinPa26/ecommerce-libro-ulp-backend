@@ -11,10 +11,56 @@ public class CompraRepository : ICompraRepository
 		_context = context;
 	}
 
-	public async Task Crear(Compra obj)
+	public async Task Crear(Compra compra)
 	{
-		await _context.Compras.AddAsync(obj);
-		await _context.SaveChangesAsync();
+		using var transaction = await _context.Database.BeginTransactionAsync();
+		try
+		{
+			decimal totalCompra = 0;
+
+			foreach (var detalle in compra.Detalles)
+			{
+				// Buscamos el libro en la base de datos para asegurar stock y precio real
+				var libro = await _context.Libros.FindAsync(detalle.LibroId);
+
+				if (libro == null || libro.Estado != EstadoLibro.DISPONIBLE)
+				{
+					await transaction.RollbackAsync();
+					throw new Exception($"El libro con ID {detalle.LibroId} no se encuentra disponible.");
+				}
+
+				if (libro.Stock < detalle.Cantidad)
+				{
+					await transaction.RollbackAsync();
+					throw new Exception($"Stock insuficiente para '{libro.Titulo}'. Disponibles: {libro.Stock}");
+				}
+
+				// Descontar stock
+				libro.Stock -= detalle.Cantidad;
+				
+				if (libro.Stock == 0)
+				{
+					libro.Estado = EstadoLibro.AGOTADO;
+				}
+
+				// Asignar precio unitario oficial del sistema (evita que manipulen precios desde el front)
+				detalle.PrecioUnitario = libro.Precio;
+
+				// Calcular acumulador total
+				totalCompra += detalle.Cantidad * detalle.PrecioUnitario;
+			}
+
+			// Guardar la cabecera de la compra primero para obtener su ID
+			_context.Compras.Add(compra);
+			await _context.SaveChangesAsync(); // Aquí EF Core ya asigna compra.Id a los detalles por la navegación
+
+			await transaction.CommitAsync();
+		}
+		catch (Exception)
+		{
+			await transaction.RollbackAsync();
+			throw;
+		}
 	}
 
 	public async Task Eliminar(Compra obj)
@@ -75,58 +121,5 @@ public class CompraRepository : ICompraRepository
 
 		// Se retorna la tupla con los dos valores
 		return (items, totalCount);
-	}
-
-	public async Task<bool> RegistrarCompra(Compra compra)
-	{
-		using var transaction = await _context.Database.BeginTransactionAsync();
-		try
-		{
-			decimal totalCompra = 0;
-
-			foreach (var detalle in compra.Detalles)
-			{
-				// Buscamos el libro en la base de datos para asegurar stock y precio real
-				var libro = await _context.Libros.FindAsync(detalle.LibroId);
-
-				if (libro == null || libro.Estado != EstadoLibro.DISPONIBLE)
-				{
-					await transaction.RollbackAsync();
-					throw new Exception($"El libro con ID {detalle.LibroId} no se encuentra disponible.");
-				}
-
-				if (libro.Stock < detalle.Cantidad)
-				{
-					await transaction.RollbackAsync();
-					throw new Exception($"Stock insuficiente para '{libro.Titulo}'. Disponibles: {libro.Stock}");
-				}
-
-				// Descontar stock
-				libro.Stock -= detalle.Cantidad;
-				
-				if (libro.Stock == 0)
-				{
-					libro.Estado = EstadoLibro.AGOTADO;
-				}
-
-				// Asignar precio unitario oficial del sistema (evita que manipulen precios desde el front)
-				detalle.PrecioUnitario = libro.Precio;
-
-				// Calcular acumulador total
-				totalCompra += detalle.Cantidad * detalle.PrecioUnitario;
-			}
-
-			// Guardar la cabecera de la compra primero para obtener su ID
-			_context.Compras.Add(compra);
-			await _context.SaveChangesAsync(); // Aquí EF Core ya asigna compra.Id a los detalles por la navegación
-
-			await transaction.CommitAsync();
-			return true;
-		}
-		catch (Exception)
-		{
-			await transaction.RollbackAsync();
-			throw;
-		}
 	}
 }

@@ -81,7 +81,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             try
             {
                 // 3. Llamar al repositorio transaccional
-                await _compraRepository.RegistrarCompra(compra);
+                await _compraRepository.Crear(compra);
 
                 TempData["SuccessMessage"] = "¡Compra registrada con éxito!";
                 return RedirectToAction(nameof(Index));
