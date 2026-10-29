@@ -283,9 +283,9 @@
                 const requestToken = tokenInput ? tokenInput.value : "";
 
                 const form = new URLSearchParams();
-                form.append("usuario_id", usuarioId);
-                form.append("libro_id", this.libro.Id);
-                form.append("cantidad", 1);
+                form.append("UsuarioId", usuarioId);
+                form.append("LibroId", this.libro.Id);
+                form.append("Cantidad", 1);
                 if (requestToken) form.append("__RequestVerificationToken", requestToken);
 
                 this.agregando = true;

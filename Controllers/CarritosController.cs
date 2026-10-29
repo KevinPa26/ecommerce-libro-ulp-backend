@@ -83,13 +83,17 @@ namespace ecommerce_libro_ulp_backend.Controllers
             {
                 try
                 {
+                    carrito.Usuario = await _usuarioRepository.ObtenerPorId(carrito.UsuarioId) ?? throw new Exception("Usuario no encontrado");
+                    carrito.Libro = await _libroRepository.ObtenerPorId(carrito.LibroId) ?? throw new Exception("Libro no encontrado");
+                    if (carrito.Cantidad > carrito.Libro.Stock) throw new InvalidOperationException("Cantidad excede el stock");
+
                     await _carritoRepository.Crear(carrito);
-                    _logger.LogInformation("Carrito creado exitosamente para el usuario con ID {UsuarioId}.", carrito.UsuarioId);
+                    _logger.LogInformation("Carrito creado exitosamente para el usuario con ID {UsuarioId}, el libro con ID {libro_id} y la cantidad {cantidad}.", carrito.UsuarioId, carrito.LibroId, carrito.Cantidad);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al intentar crear un nuevo carrito.");
+                    _logger.LogError(ex, "Error al intentar crear un nuevo carrito con datos ({usuario_id}, {libro_id}, {cantidad})", carrito.UsuarioId, carrito.LibroId, carrito.Cantidad);
                     ModelState.AddModelError("", "No se pudo guardar el carrito. Inténtelo nuevamente.");
                 }
             }
@@ -97,6 +101,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(carrito);
         }
 
+        /*
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(int usuario_id, int libro_id, int cantidad)
@@ -131,6 +136,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             
             return Ok();
         }
+        */
 
         // GET: Carritos/Editar/5
         public async Task<IActionResult> Editar(int id)
