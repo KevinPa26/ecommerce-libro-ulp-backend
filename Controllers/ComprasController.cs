@@ -53,7 +53,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(compra);
         }
 
-        [Authorize(Roles = "USUARIO")]
+        // [Authorize(Roles = "USUARIO")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear([FromBody] List<DetalleCompra> detalles)

@@ -16,6 +16,9 @@ namespace ecommerce_libro_ulp_backend.Models
         [ForeignKey("UsuarioId")]
         public Usuario? Usuario { get; set; }
 
+        [Column("total", TypeName = "decimal(10,2)")]
+        public decimal Total { get; set; }
+
         [Required(ErrorMessage = "La fecha de compra es obligatoria.")]
         [Column("fecha_compra", TypeName = "date")]
         public DateOnly FechaCompra { get; set; } = DateOnly.FromDateTime(DateTime.Now);

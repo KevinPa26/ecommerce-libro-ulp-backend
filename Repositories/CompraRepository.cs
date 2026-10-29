@@ -50,6 +50,8 @@ public class CompraRepository : ICompraRepository
 				totalCompra += detalle.Cantidad * detalle.PrecioUnitario;
 			}
 
+			compra.Total = totalCompra;
+
 			// Guardar la cabecera de la compra primero para obtener su ID
 			_context.Compras.Add(compra);
 			await _context.SaveChangesAsync(); // Aquí EF Core ya asigna compra.Id a los detalles por la navegación

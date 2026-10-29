@@ -72,6 +72,7 @@ CREATE TABLE favorito (
 CREATE TABLE compras (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
+    total DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     fecha_compra DATE NOT NULL,
     CONSTRAINT fk_compras_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
