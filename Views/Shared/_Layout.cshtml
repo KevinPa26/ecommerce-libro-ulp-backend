@@ -81,10 +81,126 @@
         .nav-admin:hover {
             background: rgba(245, 213, 138, .12) !important;
         }
+
+        /* Accesos compactos: carrito y favoritos */
+        .nav-icon-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0 !important;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 10px;
+            color: #cbd0dc;
+            transition: all .2s ease;
+        }
+
+        .nav-icon-action i {
+            margin: 0 !important;
+            font-size: 1.15rem;
+        }
+
+        .nav-cart:hover {
+            color: #67e8f9 !important;
+            border-color: rgba(103, 232, 249, .65);
+            box-shadow: 0 0 12px rgba(103, 232, 249, .18);
+        }
+
+        .nav-favorites:hover {
+            color: #fb7185 !important;
+            border-color: rgba(251, 113, 133, .65);
+            box-shadow: 0 0 12px rgba(251, 113, 133, .18);
+        }
+
+        /* Botón desplegable de perfil */
+        .profile-dropdown .dropdown-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            padding: .4rem .7rem !important;
+            border: 1px solid rgba(139, 156, 255, .35);
+            border-radius: 9px;
+            color: #e2e6ff;
+            font-size: .875rem;
+            transition: all .2s ease;
+        }
+
+        .profile-dropdown .dropdown-toggle:hover,
+        .profile-dropdown .dropdown-toggle:focus {
+            color: #fff;
+            border-color: #8b9cff;
+            background: rgba(139, 156, 255, .12);
+            box-shadow: 0 0 12px rgba(139, 156, 255, .12);
+        }
+
+        .profile-dropdown .dropdown-toggle::after {
+            margin-left: .15rem;
+        }
+
+        .profile-dropdown .dropdown-menu {
+            min-width: 205px;
+            margin-top: .65rem;
+            padding: .45rem;
+            background: #171923;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+        }
+
+        .profile-dropdown .dropdown-item {
+            padding: .65rem .75rem;
+            color: #cbd0dc;
+            border-radius: 7px;
+            font-size: .9rem;
+            transition: all .2s ease;
+        }
+
+        .profile-dropdown .dropdown-item i {
+            margin-right: .5rem;
+        }
+
+        .profile-dropdown .dropdown-item:hover,
+        .profile-dropdown .dropdown-item:focus {
+            color: #fff;
+            background: rgba(255, 255, 255, .08);
+        }
+
+        /* Cerrar sesión: rojo neón */
+        .profile-dropdown .dropdown-item.logout-neon {
+            color: #ff647c;
+            border: 1px solid transparent;
+            background: rgba(255, 45, 85, .055);
+        }
+
+        .profile-dropdown .dropdown-item.logout-neon:hover,
+        .profile-dropdown .dropdown-item.logout-neon:focus {
+            color: #fff;
+            background: rgba(255, 45, 85, .16);
+            border-color: rgba(255, 65, 100, .7);
+            box-shadow:
+                0 0 8px rgba(255, 45, 85, .2),
+                inset 0 0 8px rgba(255, 45, 85, .05);
+            text-shadow: 0 0 8px rgba(255, 65, 100, .65);
+        }
+
+        .profile-dropdown .dropdown-divider {
+            border-top-color: rgba(255, 255, 255, .12);
+        }
+
     </style>
 </head>
 
 <body>
+    @{
+        bool IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+        var NombreUsuario = User?.Identity?.Name
+            ?? User?.Claims.FirstOrDefault(c => c.Type == "Name")?.Value
+            ?? "";
+
+        var IsAdmin = User?.IsInRole("ADMIN") ?? false;
+        var IsUsuario = User?.IsInRole("USUARIO") ?? false;
+    }
     <header>
         <nav class="navbar navbar-expand-lg main-navbar mb-4">
             <div class="container">
@@ -110,24 +226,31 @@
                             </a>
                         </li>
 
-                        <li class="nav-item d-none" id="navUsuarios">
-                            <a class="nav-link nav-admin"
-                               asp-controller="Usuarios" asp-action="Index">
-                                <i class="bi bi-shield-lock"></i>Usuarios
-                            </a>
-                        </li>
+                        @if (IsAuthenticated && IsAdmin)
+                        {
+                            <li class="nav-item" id="navUsuarios">
+                                <a class="nav-link nav-admin"
+                                asp-controller="Usuarios"
+                                asp-action="Index">
+                                    <i class="bi bi-shield-lock"></i>Usuarios
+                                </a>
+                            </li>
+                        }
+
+                        @if (IsAuthenticated && IsUsuario)
+                        {
+                            <li class="nav-item" id="itemCompras">
+                                <a class="nav-link"
+                                asp-controller="Compras"
+                                asp-action="Index">
+                                    <i class="bi bi-bag-check"></i>Compras
+                                </a>
+                            </li>
+                        }
 
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Libros" asp-action="Index">
                                 <i class="bi bi-book"></i>Libros
-                            </a>
-                        </li>
-
-                        
-                        <li class="nav-item d-none" id="itemCompras">
-                            <a class="nav-link"
-                            asp-controller="Compras" asp-action="Index">
-                                <i class="bi bi-bag-check"></i>Compras
                             </a>
                         </li>
 
@@ -139,38 +262,96 @@
                         </li>
                     </ul>
 
-                    <ul class="navbar-nav align-items-lg-center gap-lg-2">
-                        <li class="nav-item" id="itemLogin">
-                            <a class="nav-link nav-action"
-                               asp-controller="Auth" asp-action="Login"
-                               id="navLogin">
-                                <i class="bi bi-box-arrow-in-right"></i>Iniciar sesión
-                            </a>
-                        </li>
+                    
+                    <ul class="navbar-nav align-items-lg-center gap-2">
 
-                        <li class="nav-item" id="itemRegistro">
-                            <a class="nav-link nav-register"
-                               asp-controller="Auth" asp-action="Registro"
-                               id="navRegistro">
-                                <i class="bi bi-person-plus"></i>Crear cuenta
-                            </a>
-                        </li>
+                        @if (IsAuthenticated && IsUsuario)
+                        {
+                            <li class="nav-item" id="itemCarrito">
+                                <a class="nav-link nav-icon-action nav-cart"
+                                asp-controller="Carritos"
+                                asp-action="Index"
+                                aria-label="Mi carrito"
+                                title="Mi carrito">
+                                    <i class="bi bi-cart3"></i>
+                                </a>
+                            </li>
 
-                        <li class="nav-item d-none" id="itemPerfil">
-                            <a class="nav-link"
-                               asp-controller="Auth" asp-action="Perfil"
-                               id="navPerfil">
-                                <i class="bi bi-person-circle"></i>Mi perfil
-                            </a>
-                        </li>
+                            <li class="nav-item" id="itemFavoritos">
+                                <a class="nav-link nav-icon-action nav-favorites"
+                                asp-controller="Favoritos"
+                                asp-action="Index"
+                                aria-label="Mis favoritos"
+                                title="Mis favoritos">
+                                    <i class="bi bi-heart"></i>
+                                </a>
+                            </li>
+                        }
 
-                        <li class="nav-item d-none" id="itemLogout">
-                            <button class="nav-link nav-action"
-                                    type="button" id="navLogout">
-                                <i class="bi bi-box-arrow-right"></i>Cerrar sesión
-                            </button>
-                        </li>
+                        @if (IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown profile-dropdown">
+                                <button class="nav-link dropdown-toggle"
+                                        type="button"
+                                        id="menuPerfil"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i>
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end"
+                                    aria-labelledby="menuPerfil">
+
+                                    <li>
+                                        <a class="dropdown-item"
+                                        asp-controller="Auth"
+                                        asp-action="Perfil"
+                                        id="navPerfil">
+                                            <i class="bi bi-person"></i>
+                                            Ver mi perfil
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+
+                                    <li>
+                                        <button class="dropdown-item logout-neon"
+                                                type="button"
+                                                id="navLogout">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            Cerrar sesión
+                                        </button>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item" id="itemLogin">
+                                <a class="nav-link nav-action"
+                                asp-controller="Auth"
+                                asp-action="Login"
+                                id="navLogin">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    Iniciar sesión
+                                </a>
+                            </li>
+
+                            <li class="nav-item" id="itemRegistro">
+                                <a class="nav-link nav-register"
+                                asp-controller="Auth"
+                                asp-action="Registro"
+                                id="navRegistro">
+                                    <i class="bi bi-person-plus"></i>
+                                    Crear cuenta
+                                </a>
+                            </li>
+                        }
+
                     </ul>
+
                 </div>
             </div>
         </nav>
@@ -202,6 +383,8 @@
         const logout = document.getElementById("itemLogout");
         const usuarios = document.getElementById("navUsuarios");
         const compras = document.getElementById("itemCompras");
+        const carrito = document.getElementById("itemCarrito");
+        const favoritos = document.getElementById("itemFavoritos");
 
         function mostrarAutenticado(autenticado) {
             login?.classList.toggle("d-none", autenticado);
@@ -212,16 +395,13 @@
 
         function mostrarRol(rol) {
             const rolNormalizado = String(rol ?? "").trim().toUpperCase();
+            const esAdmin = rolNormalizado === "ADMIN";
+            const esUsuario = rolNormalizado === "USUARIO";
 
-            usuarios?.classList.toggle(
-                "d-none",
-                rolNormalizado !== "ADMIN"
-            );
-
-            compras?.classList.toggle(
-                "d-none",
-                rolNormalizado !== "USUARIO"
-            );
+            usuarios?.classList.toggle("d-none", !esAdmin);
+            compras?.classList.toggle("d-none", !esUsuario);
+            carrito?.classList.toggle("d-none", !esUsuario);
+            favoritos?.classList.toggle("d-none", !esUsuario);
         }
 
         async function actualizarMenu() {

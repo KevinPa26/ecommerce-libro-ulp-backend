@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
 using System.Net.Mail;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
+    [Authorize(Roles = "USUARIO")]
     public class CarritosController : Controller
     {
         private readonly ICarritoRepository _carritoRepository;

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
+    [Authorize(Roles = "USUARIO")]
     public class FavoritosController : Controller
     {
         private readonly IFavoritoRepository _favoritoRepository;

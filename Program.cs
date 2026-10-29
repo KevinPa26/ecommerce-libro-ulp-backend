@@ -150,10 +150,22 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
+
+app.MapControllerRoute(
+    name: "mi-carrito",
+    pattern: "MiCarrito",
+    defaults: new
+    {
+        controller = "Carritos",
+        action = "Index"
+    })
+    .WithStaticAssets();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
 
 
 app.Run();
