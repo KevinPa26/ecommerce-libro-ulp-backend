@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
 using System.Net.Mail;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
@@ -22,22 +23,16 @@ namespace ecommerce_libro_ulp_backend.Controllers
         }
 
         // GET: Carritos
-        public async Task<IActionResult> Index(int? usuarioId)
+        public async Task<IActionResult> Index()
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
             try
             {
-                List<Carrito> carritos;
-
-                // Si recibimos un ID de usuario por parámetro, filtramos sus carritos; si no, traemos todos.
-                if (usuarioId.HasValue)
-                {
-                    carritos = await _carritoRepository.ObtenerPorUsuarioId(usuarioId.Value);
-                }
-                else
-                {
-                    carritos = await _carritoRepository.ObtenerTodos();
-                }
-
+                var carritos = await _carritoRepository.ObtenerPorUsuarioId(usuarioId);
                 return View(carritos);
             }
             catch (Exception ex)
