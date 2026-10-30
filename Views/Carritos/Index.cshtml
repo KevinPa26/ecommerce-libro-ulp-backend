@@ -6,7 +6,8 @@
 	var carritos = Model?.ToList() ?? new List<ecommerce_libro_ulp_backend.Models.Carrito>();
 }
 
-<div class="container py-4">
+<div id="app" class="container py-4">
+	@Html.AntiForgeryToken()
 	<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 		<div>
 			<h1 class="h2 mb-1">Mi carrito</h1>
@@ -57,7 +58,7 @@
 									<input id="cantidad-@carrito.Id" class="form-control form-control-sm" type="number" min="1" value="@carrito.Cantidad" style="width: 6rem" />
 								</td>
 								<td class="text-end">
-									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @carrito.Libro.Titulo del carrito">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @carrito.Libro.Titulo del carrito" v-on:click="quitar(@carrito.Id)">
 										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 									</button>
 								</td>
@@ -78,7 +79,7 @@
 									}
 								</td>
 								<td class="text-end">
-									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar Libro @carrito.LibroId del carrito">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar Libro @carrito.LibroId del carrito" v-on:click="quitar(@carrito.Id)">
 										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 									</button>
 								</td>
@@ -96,3 +97,37 @@
 		</div>
 	}
 </div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+	Vue.createApp({
+		methods: {
+			async quitar(carritoId) {
+				const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+				const form = new URLSearchParams();
+				form.append("id", carritoId);
+				if (tokenInput) form.append("__RequestVerificationToken", tokenInput.value);
+
+				try {
+					const response = await fetch("@Url.Action("Eliminar", "Carritos")", {
+						method: "POST",
+						credentials: "same-origin",
+					headers: {
+							"Accept": "text/html"
+					},
+					body: form
+					});
+
+					if (response.ok) {
+						window.location.reload();
+					} else {
+						throw new Error(`Error ${response.status}`);
+					}
+				} catch (error) {
+					console.error(error);
+					alert("No se pudo quitar del carrito: " + error.message);
+				}
+			}
+		}
+	}).mount('#app')
+</script>
