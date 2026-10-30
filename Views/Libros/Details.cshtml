@@ -314,9 +314,65 @@
                     alert("No se pudo agregar el libro al carrito: " + error.message);
                 });
             },
-            toggleFavorito() {
-                this.esFavorito = !this.esFavorito;
-                alert(this.esFavorito ? 'Agregado a tus favoritos.' : 'Eliminado de tus favoritos.');
+            async toggleFavorito() {
+                const token = sessionStorage.getItem("jwt");
+                if (!token) {
+                    alert("Debés iniciar sesión para agregar el libro al carrito.");
+                    return;
+                }
+
+                let usuarioId;
+                try {
+                    const payload = JSON.parse(atob(token.split(".")[1]));
+                    usuarioId = parseInt(
+                        payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+                        payload.nameid ||
+                        payload.sub,
+                        10
+                    );
+                } catch (e) {
+                    alert("No se pudo obtener el usuario de la sesión.");
+                    return;
+                }
+
+                if (!usuarioId) {
+                    alert("No se pudo identificar al usuario. Iniciá sesión nuevamente.");
+                    return;
+                }
+
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const requestToken = tokenInput ? tokenInput.value : "";
+
+                const form = new URLSearchParams();
+                form.append("UsuarioId", usuarioId);
+                form.append("LibroId", this.libro.Id);
+                if (requestToken) form.append("__RequestVerificationToken", requestToken);
+
+                const url = this.esFavorito ? "/Favoritos/Eliminar" : "/Favoritos/Crear";
+
+                fetch(url, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Accept": "application/json"
+                    },
+                    body: form
+                })
+                .then(async (response) => {
+                    if (response.ok) {
+                        this.esFavorito = !this.esFavorito;
+                        alert(this.esFavorito ? 'Agregado a tus favoritos.' : 'Eliminado de tus favoritos.');
+                    } else {
+                        const texto = await response.text();
+                        throw new Error(texto || `Error ${response.status}`);
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                    alert("No se pudo agregar el libro a favoritos: " + error.message);
+                });
+                
             }
         }
     }).mount('#app');
