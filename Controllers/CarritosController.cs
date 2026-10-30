@@ -176,10 +176,21 @@ namespace ecommerce_libro_ulp_backend.Controllers
         // GET: Carritos/Eliminar/5
         public async Task<IActionResult> Eliminar(int id)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
             var carrito = await _carritoRepository.ObtenerPorId(id);
+            
             if (carrito == null)
             {
                 return NotFound();
+            }
+
+            if (!usuarioId.Equals(carrito.UsuarioId))
+            {
+                return Unauthorized();
             }
 
             return View(carrito);
@@ -190,14 +201,27 @@ namespace ecommerce_libro_ulp_backend.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EliminarConfirmado(int id)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
             try
             {
                 var carrito = await _carritoRepository.ObtenerPorId(id);
-                if (carrito != null)
+                
+                if (carrito == null)
                 {
-                    await _carritoRepository.Eliminar(carrito);
-                    _logger.LogInformation("Carrito con ID {CarritoId} eliminado.", id);
+                    return NotFound();
                 }
+
+                if (!usuarioId.Equals(carrito.UsuarioId))
+                {
+                    return Unauthorized();
+                }
+
+                await _carritoRepository.Eliminar(carrito);
+                _logger.LogInformation("Carrito con ID {CarritoId} eliminado.", id);
 
                 return RedirectToAction(nameof(Index));
             }
