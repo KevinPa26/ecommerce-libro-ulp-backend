@@ -69,22 +69,29 @@ namespace ecommerce_libro_ulp_backend.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(Favorito favorito)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    await _favoritoRepository.Crear(favorito);
-                    _logger.LogInformation("Favorito creado exitosamente para el usuario ID {UsuarioId} y libro ID {LibroId}.", favorito.UsuarioId, favorito.LibroId);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al intentar crear un nuevo favorito.");
-                    ModelState.AddModelError("", "No se pudo guardar el favorito. Inténtelo nuevamente.");
-                }
+                return BadRequest(new { success = false, message = "Datos inválidos para agregar a favoritos." });
             }
 
-            return View(favorito);
+            try
+            {
+                Favorito? existe = await _favoritoRepository.ObtenerPorId(favorito.UsuarioId, favorito.LibroId);
+                if (existe != null)
+                {
+                    return BadRequest(new { success = false, message = "El libro ya está en tus favoritos." });
+                }
+
+                await _favoritoRepository.Crear(favorito);
+                _logger.LogInformation("Favorito creado exitosamente para el usuario ID {UsuarioId} y libro ID {LibroId}.", favorito.UsuarioId, favorito.LibroId);
+                
+                return Ok(new { success = true, message = "Agregado a tus favoritos." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al intentar crear un nuevo favorito.");
+                return StatusCode(500, new { success = false, message = "No se pudo guardar el favorito. Inténtelo nuevamente." });
+            }
         }
 
         // GET: Favoritos/Editar/5
@@ -139,6 +146,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(favorito);
         }
 
+        /*
         // POST: Favoritos/Eliminar/5
         [HttpPost, ActionName("Eliminar")]
         [ValidateAntiForgeryToken]
@@ -159,6 +167,34 @@ namespace ecommerce_libro_ulp_backend.Controllers
             {
                 _logger.LogError(ex, "Error al eliminar el favorito con ID {FavoritoId}.", id);
                 return View("Error");
+            }
+        }
+        */
+
+        [HttpPost, ActionName("Eliminar")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Eliminar(Favorito favorito)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Datos inválidos para eliminar el favorito." });
+            }
+
+            try
+            {
+                Favorito? bdFavorito = await _favoritoRepository.ObtenerPorId(favorito.UsuarioId, favorito.LibroId);
+                if (bdFavorito != null)
+                {
+                    await _favoritoRepository.Eliminar(bdFavorito);
+                    _logger.LogInformation("Favorito con ID {FavoritoId} eliminado.", bdFavorito.Id);
+                }
+
+                return Ok(new { success = true, message = "Eliminado de tus favoritos." });                
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el favorito con IDs {UsuarioId}, {LibroId}.", favorito.UsuarioId, favorito.LibroId);
+                return StatusCode(500, new { success = false, message = "Error interno del servidor." });
             }
         }
     }
