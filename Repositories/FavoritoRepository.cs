@@ -16,6 +16,13 @@ public class FavoritoRepository : IFavoritoRepository
 		return await _context.Favoritos.FindAsync(id);
 	}
 
+	public async Task<Favorito?> ObtenerPorId(int usuario_id, int libro_id)
+	{
+		return await _context.Favoritos
+			.Where(f => f.UsuarioId.Equals(usuario_id) && f.LibroId.Equals(libro_id))
+			.FirstOrDefaultAsync();
+	}
+
 	public async Task<List<Favorito>> ObtenerTodos()
 	{
 		return await _context.Favoritos
@@ -55,4 +62,5 @@ public class FavoritoRepository : IFavoritoRepository
 	{
 		return await ObtenerPorUsuarioId(usuario.Id);
 	}
+
 }
