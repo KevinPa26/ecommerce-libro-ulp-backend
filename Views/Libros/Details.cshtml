@@ -285,7 +285,7 @@
                 const form = new URLSearchParams();
                 form.append("UsuarioId", usuarioId);
                 form.append("LibroId", this.libro.Id);
-                form.append("Cantidad", 1);
+                form.append("Cantidad", this.cantidad);
                 if (requestToken) form.append("__RequestVerificationToken", requestToken);
 
                 this.agregando = true;
