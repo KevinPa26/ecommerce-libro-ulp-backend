@@ -131,7 +131,7 @@
                         <!-- Imagen del Libro -->
                         <div class="bg-light text-center overflow-hidden position-relative" style="height: 220px;">
                             @{
-                                string imgPath = "https://via.placeholder.com/150?text=Sin+Portada";
+                                string imgPath = "/images/book.svg";
                                 if (libro.Imagenes != null && libro.Imagenes.Any())
                                 {
                                     var principal = libro.Imagenes.FirstOrDefault(img => img.EsPrincipal) ?? libro.Imagenes.First();
@@ -141,7 +141,7 @@
                             <img src="@imgPath" 
                                  class="w-100 h-100 object-fit-contain p-2" 
                                  alt="Portada del libro" 
-                                 onerror="this.src='https://via.placeholder.com/150?text=Sin+Imagen'" />
+                                 onerror="this.src='/images/book.svg'" />
                         </div>
 
                         <!-- Cuerpo de la Tarjeta -->
