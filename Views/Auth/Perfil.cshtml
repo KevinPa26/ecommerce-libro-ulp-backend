@@ -22,6 +22,36 @@
                                  width="120" height="120"
                                  alt="Avatar del usuario"
                                  style="object-fit: cover;" />
+
+                            <div class="mt-3">
+                                <label for="archivoAvatar" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-camera me-1"></i>
+                                    Cambiar foto
+                                </label>
+
+                                <input type="file"
+                                    id="archivoAvatar"
+                                    class="d-none"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                                <button id="btnGuardarAvatar"
+                                        class="btn btn-primary btn-sm d-none">
+                                    <i class="bi bi-check-lg me-1"></i>
+                                    Guardar foto
+                                </button>
+
+                                <button id="btnCancelarAvatar"
+                                        class="btn btn-outline-secondary btn-sm d-none">
+                                    Cancelar
+                                </button>
+
+                                <p class="text-secondary small mt-2 mb-0">
+                                    JPG, PNG o WEBP. Tamaño máximo: 2 MB.
+                                </p>
+
+                                <div id="estadoAvatar" class="small mt-2" role="status"></div>
+                            </div>
+
                             <h1 id="nombrePerfil" class="h3 mt-3"></h1>
                             <span id="rolPerfil" class="badge text-bg-primary"></span>
                         </div>
@@ -56,6 +86,110 @@
     const cargando = document.getElementById("cargando");
     const contenido = document.getElementById("contenidoPerfil");
     const error = document.getElementById("errorPerfil");
+    
+    const archivoAvatar = document.getElementById("archivoAvatar");
+    const btnGuardarAvatar = document.getElementById("btnGuardarAvatar");
+    const btnCancelarAvatar = document.getElementById("btnCancelarAvatar");
+    const estadoAvatar = document.getElementById("estadoAvatar");
+    const avatarPerfil = document.getElementById("avatarPerfil");
+
+    let archivoSeleccionado = null;
+    let avatarOriginal = "";
+
+    archivoAvatar.addEventListener("change", () => {
+        const archivo = archivoAvatar.files[0];
+
+        if (!archivo) return;
+
+        const extensiones = [".jpg", ".jpeg", ".png", ".webp"];
+        const extension = archivo.name
+            .substring(archivo.name.lastIndexOf("."))
+            .toLowerCase();
+
+        if (!extensiones.includes(extension)) {
+            estadoAvatar.textContent = "Formato de imagen no permitido.";
+            estadoAvatar.className = "small mt-2 text-danger";
+            archivoAvatar.value = "";
+            return;
+        }
+
+        if (archivo.size > 2 * 1024 * 1024) {
+            estadoAvatar.textContent = "La imagen no puede superar los 2 MB.";
+            estadoAvatar.className = "small mt-2 text-danger";
+            archivoAvatar.value = "";
+            return;
+        }
+
+        archivoSeleccionado = archivo;
+
+        const vistaPrevia = URL.createObjectURL(archivo);
+        avatarPerfil.src = vistaPrevia;
+
+        btnGuardarAvatar.classList.remove("d-none");
+        btnCancelarAvatar.classList.remove("d-none");
+
+        estadoAvatar.textContent = "Vista previa. Confirmá para guardar.";
+        estadoAvatar.className = "small mt-2 text-secondary";
+    });
+
+    btnCancelarAvatar.addEventListener("click", () => {
+        archivoSeleccionado = null;
+        archivoAvatar.value = "";
+
+        avatarPerfil.src = avatarOriginal;
+
+        btnGuardarAvatar.classList.add("d-none");
+        btnCancelarAvatar.classList.add("d-none");
+
+        estadoAvatar.textContent = "";
+    });
+
+    btnGuardarAvatar.addEventListener("click", async () => {
+        if (!archivoSeleccionado) return;
+
+        const formData = new FormData();
+        formData.append("avatar", archivoSeleccionado);
+
+        btnGuardarAvatar.disabled = true;
+        estadoAvatar.textContent = "Guardando imagen...";
+        estadoAvatar.className = "small mt-2 text-secondary";
+
+        try {
+            const respuesta = await fetch("/api/account/avatar", {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    resultado.mensaje || "No se pudo actualizar el avatar."
+                );
+            }
+
+            avatarOriginal = resultado.avatar;
+            avatarPerfil.src = `${resultado.avatar}?v=${Date.now()}`;
+
+            archivoSeleccionado = null;
+            archivoAvatar.value = "";
+
+            btnGuardarAvatar.classList.add("d-none");
+            btnCancelarAvatar.classList.add("d-none");
+
+            estadoAvatar.textContent = resultado.mensaje;
+            estadoAvatar.className = "small mt-2 text-success";
+        } catch (e) {
+            estadoAvatar.textContent = e.message;
+            estadoAvatar.className = "small mt-2 text-danger";
+        } finally {
+            btnGuardarAvatar.disabled = false;
+        }
+    });
+
 
     async function cerrarSesion() {
         try {
@@ -111,6 +245,7 @@
                 avatar.onerror = null;
                 avatar.src = "/images/avatar-default.png";
             };
+            avatarOriginal = avatar.src;
 
             cargando.classList.add("d-none");
             contenido.classList.remove("d-none");

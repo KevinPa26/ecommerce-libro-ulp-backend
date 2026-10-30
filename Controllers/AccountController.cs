@@ -287,6 +287,86 @@ public class AccountController : ControllerBase
         });
     }
 
+
+    // PUT: api/account/avatar
+    [Authorize]
+    [HttpPut("avatar")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(3 * 1024 * 1024)]
+    public async Task<IActionResult> ActualizarAvatar(
+        [FromForm] IFormFile? avatar)
+    {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(idClaim, out var usuarioId))
+        {
+            return Unauthorized(new
+            {
+                mensaje = "No se pudo identificar al usuario."
+            });
+        }
+
+        if (avatar is null)
+        {
+            return BadRequest(new
+            {
+                mensaje = "Seleccioná una imagen."
+            });
+        }
+
+        var usuario = await _usuarioRepository.ObtenerPorId(usuarioId);
+
+        if (usuario is null || usuario.Estado != EstadoUsuario.ACTIVO)
+        {
+            return Unauthorized(new
+            {
+                mensaje = "La cuenta no está disponible."
+            });
+        }
+
+        var resultado = await GuardarAvatar(avatar);
+
+        if (!resultado.Exito)
+        {
+            return BadRequest(new
+            {
+                mensaje = resultado.Error
+            });
+        }
+
+        var avatarAnterior = usuario.Avatar;
+
+        try
+        {
+            usuario.Avatar = resultado.Ruta!;
+
+            await _usuarioRepository.Modificar(usuario);
+
+            // Eliminamos el avatar anterior únicamente después
+            // de guardar correctamente la nueva ruta.
+            if (!string.IsNullOrWhiteSpace(avatarAnterior) &&
+                avatarAnterior.StartsWith(
+                    "/uploads/avatars/",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                EliminarArchivoAvatar(avatarAnterior);
+            }
+
+            return Ok(new
+            {
+                mensaje = "Avatar actualizado correctamente.",
+                avatar = usuario.Avatar
+            });
+        }
+        catch
+        {
+            // Si falla la actualización, limpiamos el archivo nuevo.
+            EliminarArchivoAvatar(resultado.Ruta!);
+            throw;
+        }
+    }
+
+
     private AuthResponse CrearRespuestaAutenticacion(Usuario usuario)
     {
         var secret = _configuration["Jwt:Secret"]
