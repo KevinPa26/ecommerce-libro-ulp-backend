@@ -1,0 +1,698 @@
+
+@using System.Text.Json
+@model ecommerce_libro_ulp_backend.Models.Compra
+
+@{
+    ViewData["Title"] = "Detalle de compra";
+
+    var detallesCompra = Model.Detalles.Select(detalle =>
+    {
+        var libro = detalle.Libro;
+
+        var imagen = libro?.Imagenes?
+            .FirstOrDefault(i => i.EsPrincipal)
+            ?? libro?.Imagenes?.FirstOrDefault();
+
+        return new
+        {
+            libroId = detalle.LibroId,
+            titulo = libro?.Titulo ?? "Libro no disponible",
+            autor = libro?.Autor ?? "Autor no disponible",
+            isbn13 = libro?.Isbn13 ?? "",
+            descripcionLibro = libro?.DescripcionLibro ?? "",
+            descripcionVendedor = libro?.DescripcionVendedor ?? "",
+            cantidad = detalle.Cantidad,
+            precioUnitario = detalle.PrecioUnitario,
+            subtotal = detalle.Cantidad * detalle.PrecioUnitario,
+            imagenUrl = imagen?.Path,
+            urlDetalle = Url.Action(
+                "Details",
+                "Libros",
+                new { id = detalle.LibroId }
+            ) ?? $"/Libros/Details/{detalle.LibroId}"
+        };
+    }).ToList();
+
+    var datosCompra = new
+    {
+        id = Model.Id,
+        total = Model.Total,
+        fechaCompra = Model.FechaCompra.ToString("yyyy-MM-dd"),
+        detalles = detallesCompra
+    };
+
+    // Se conserva el codificador HTML predeterminado por seguridad.
+    var compraJson = JsonSerializer.Serialize(
+        datosCompra,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }
+    );
+}
+
+<div id="compraApp" class="container py-5">
+
+    <div class="compra-panel">
+
+       <!-- Encabezado -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <div class="compra-eyebrow mb-2">
+                    <i class="bi bi-receipt"></i> HISTORIAL DE COMPRAS
+                </div>
+
+                <h1 class="compra-title mb-1">Detalle de compra</h1>
+
+                <p class="compra-subtitle mb-0">
+                    Consultá los productos incluidos en tu pedido.
+                </p>
+            </div>
+
+            <a asp-controller="Compras"
+            asp-action="Index"
+            class="btn btn-volver">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver a mis compras
+            </a>
+        </div>
+
+        <!-- Resumen -->
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-6">
+                <div class="resumen-card resumen-total">
+                    <div class="resumen-icon">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+
+                    <div>
+                        <span class="resumen-label">Total de la compra</span>
+                        <div class="resumen-value">
+                            {{ formatoMoneda(compra.total) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="resumen-card resumen-fecha">
+                    <div class="resumen-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+
+                    <div>
+                        <span class="resumen-label">Fecha de compra</span>
+                        <div class="resumen-value">
+                            {{ formatoFecha(compra.fechaCompra) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Productos -->
+        <div class="productos-header mb-3">
+            <div>
+                <h2 class="productos-title mb-1">Productos adquiridos</h2>
+
+                <span class="compra-subtitle small">
+                    {{ compra.detalles.length }}
+                    {{ compra.detalles.length === 1 ? 'libro' : 'libros' }}
+                </span>
+            </div>
+
+            <!-- Buscador: solamente aparece cuando hay varios libros -->
+            <div v-if="compra.detalles.length > 1"
+                class="buscador-compra">
+
+                <i class="bi bi-search"></i>
+
+                <input type="text"
+                    v-model="busqueda"
+                    placeholder="Buscar por nombre del libro..."
+                    aria-label="Buscar libro comprado" />
+
+                <button v-if="busqueda"
+                        type="button"
+                        class="btn-limpiar"
+                        v-on:click="busqueda = ''"
+                        aria-label="Limpiar búsqueda">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Compra sin productos -->
+        <div v-if="compra.detalles.length === 0"
+            class="estado-vacio">
+
+            <i class="bi bi-bag-x"></i>
+            <h3>Esta compra no tiene productos</h3>
+            <p>No hay detalles registrados para esta compra.</p>
+        </div>
+
+        <!-- Tarjetas de productos -->
+        <div v-else-if="librosFiltrados.length > 0"
+            class="d-flex flex-column gap-3">
+
+            <article v-for="(libro, index) in librosFiltrados"
+                    :key="libro.libroId"
+                    class="libro-compra-card">
+
+                <!-- Imagen -->
+                <div class="libro-imagen">
+                    <img v-if="libro.imagenUrl"
+                        :src="libro.imagenUrl"
+                        :alt="libro.titulo"
+                        loading="lazy" />
+
+                    <div v-else class="imagen-placeholder">
+                        <i class="bi bi-book"></i>
+                        <span>Sin imagen</span>
+                    </div>
+                </div>
+
+                <!-- Información -->
+                <div class="libro-contenido">
+
+                    <div class="libro-principal">
+                        <div class="libro-titulo-area">
+                            <span class="libro-etiqueta">
+                                PRODUCTO {{ index + 1 }}
+                            </span>
+
+                            <h3 class="libro-titulo">
+                                {{ libro.titulo }}
+                            </h3>
+
+                            <p class="libro-autor">
+                                <i class="bi bi-person me-1"></i>
+                                {{ libro.autor }}
+                            </p>
+                        </div>
+
+                        <div class="cantidad-badge">
+                            <i class="bi bi-box-seam me-1"></i>
+                            {{ libro.cantidad }}
+                            {{ libro.cantidad === 1 ? 'unidad' : 'unidades' }}
+                        </div>
+                    </div>
+
+                    <div v-if="libro.isbn13" class="libro-isbn">
+                        ISBN-13: {{ libro.isbn13 }}
+                    </div>
+
+                    <div v-if="libro.descripcionLibro"
+                        class="libro-descripcion">
+                        {{ libro.descripcionLibro }}
+                    </div>
+
+                    <div v-if="libro.descripcionVendedor"
+                        class="libro-descripcion-vendedor">
+
+                        <span class="descripcion-label">
+                            Descripción del vendedor
+                        </span>
+
+                        <p>{{ libro.descripcionVendedor }}</p>
+                    </div>
+
+                    <!-- Precios -->
+                    <div class="libro-footer">
+
+                        <div class="precio-detalle">
+                            <span>Precio unitario</span>
+                            <strong>
+                                {{ formatoMoneda(libro.precioUnitario) }}
+                            </strong>
+                        </div>
+
+                        <div class="precio-detalle">
+                            <span>Subtotal</span>
+                            <strong class="precio-subtotal">
+                                {{ formatoMoneda(libro.subtotal) }}
+                            </strong>
+                        </div>
+
+                        <a :href="libro.urlDetalle"
+                        class="btn-ver-libro">
+                            Ver publicación
+                            <i class="bi bi-arrow-up-right ms-1"></i>
+                        </a>
+
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- Búsqueda sin resultados -->
+        <div v-else class="estado-vacio">
+            <i class="bi bi-search"></i>
+            <h3>No encontramos resultados</h3>
+            <p>Probá con otro nombre de libro.</p>
+
+            <button type="button"
+                    class="btn btn-volver"
+                    v-on:click="busqueda = ''">
+                Limpiar búsqueda
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .compra-title {
+        color: #67e8f9 !important;
+        font-size: clamp(1.7rem, 4vw, 2.3rem);
+        font-weight: 750;
+        letter-spacing: -.8px;
+    }
+
+    .compra-eyebrow {
+        color: #67e8f9;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+    }
+
+    .compra-subtitle {
+        color: #aeb8c8;
+    }
+
+    .btn-volver {
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, .25);
+        background: #202532;
+        border-radius: 9px;
+        padding: .65rem 1rem;
+        transition: .2s ease;
+    }
+
+    .btn-volver:hover {
+        color: #67e8f9;
+        border-color: #67e8f9;
+        background: rgba(103, 232, 249, .07);
+    }
+
+    .resumen-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        height: 100%;
+        min-height: 112px;
+        padding: 1.35rem;
+        border: 1px solid rgba(148, 163, 184, .14);
+        border-radius: 13px;
+        background: linear-gradient(135deg, #202634, #191e29);
+    }
+
+    .resumen-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: rgba(103, 232, 249, .1);
+        color: #67e8f9;
+        font-size: 1.35rem;
+    }
+
+    .resumen-fecha .resumen-icon {
+        color: #a5b4fc;
+        background: rgba(165, 180, 252, .1);
+    }
+
+    .resumen-label {
+        display: block;
+        margin-bottom: .3rem;
+        color: #94a3b8;
+        font-size: .82rem;
+    }
+
+    .resumen-value {
+        color: #f8fafc;
+        font-size: 1.35rem;
+        font-weight: 750;
+    }
+
+    .productos-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .productos-title {
+        color: #f1f5f9;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .buscador-compra {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        width: min(100%, 350px);
+        padding: .65rem .85rem;
+        border: 1px solid rgba(148, 163, 184, .22);
+        border-radius: 10px;
+        background: #202532;
+        color: #94a3b8;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .buscador-compra:focus-within {
+        border-color: #67e8f9;
+        box-shadow: 0 0 0 3px rgba(103, 232, 249, .08);
+    }
+
+    .buscador-compra input {
+        width: 100%;
+        min-width: 0;
+        color: #f1f5f9;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-size: .88rem;
+    }
+
+    .buscador-compra input::placeholder {
+        color: #778397;
+    }
+
+    .btn-limpiar {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #94a3b8;
+    }
+
+    .libro-compra-card {
+        display: flex;
+        gap: 1.35rem;
+        padding: 1.35rem;
+        border: 1px solid rgba(148, 163, 184, .14);
+        border-radius: 14px;
+        background: linear-gradient(135deg, #202634, #191e29);
+        transition: border-color .2s ease, transform .2s ease;
+    }
+
+    .libro-compra-card:hover {
+        border-color: rgba(103, 232, 249, .35);
+        transform: translateY(-2px);
+    }
+
+    .libro-imagen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 145px;
+        min-width: 145px;
+        min-height: 190px;
+        overflow: hidden;
+        border-radius: 9px;
+        background: #111722;
+    }
+
+    .libro-imagen img {
+        display: block;
+        width: 100%;
+        height: 190px;
+        object-fit: contain;
+    }
+
+    .imagen-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .5rem;
+        color: #64748b;
+        font-size: .8rem;
+    }
+
+    .imagen-placeholder i {
+        font-size: 2.5rem;
+    }
+
+    .libro-contenido {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        flex-direction: column;
+    }
+
+    .libro-principal {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .libro-etiqueta {
+        color: #67e8f9;
+        font-size: .67rem;
+        font-weight: 800;
+        letter-spacing: 1.3px;
+    }
+
+    .libro-titulo {
+        margin: .35rem 0;
+        color: #f8fafc;
+        font-size: 1.2rem;
+        font-weight: 750;
+    }
+
+    .libro-autor {
+        margin: 0;
+        color: #aeb9ca;
+        font-size: .9rem;
+    }
+
+    .cantidad-badge {
+        flex-shrink: 0;
+        padding: .45rem .7rem;
+        border: 1px solid rgba(103, 232, 249, .2);
+        border-radius: 8px;
+        background: rgba(103, 232, 249, .07);
+        color: #67e8f9;
+        font-size: .78rem;
+        font-weight: 650;
+    }
+
+    .libro-isbn {
+        margin-top: .75rem;
+        color: #8492a6;
+        font-size: .78rem;
+    }
+
+    .libro-descripcion {
+        margin-top: .75rem;
+        color: #c1cad7;
+        font-size: .86rem;
+        line-height: 1.55;
+        white-space: pre-line;
+    }
+
+    .libro-descripcion-vendedor {
+        margin-top: .65rem;
+        padding-left: .75rem;
+        border-left: 2px solid rgba(103, 232, 249, .35);
+    }
+
+    .descripcion-label {
+        color: #94a3b8;
+        font-size: .75rem;
+        font-weight: 650;
+    }
+
+    .libro-descripcion-vendedor p {
+        margin: .25rem 0 0;
+        color: #aeb9ca;
+        font-size: .83rem;
+        white-space: pre-line;
+    }
+
+    .libro-footer {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        margin-top: auto;
+        padding-top: 1.15rem;
+    }
+
+    .precio-detalle {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+    }
+
+    .precio-detalle span {
+        color: #8492a6;
+        font-size: .76rem;
+    }
+
+    .precio-detalle strong {
+        color: #e2e8f0;
+        font-size: .95rem;
+    }
+
+    .precio-detalle .precio-subtotal {
+        color: #67e8f9;
+        font-size: 1.05rem;
+    }
+
+    .btn-ver-libro {
+        margin-left: auto;
+        padding: .6rem .85rem;
+        border: 1px solid rgba(103, 232, 249, .3);
+        border-radius: 8px;
+        color: #67e8f9;
+        font-size: .82rem;
+        font-weight: 650;
+        text-decoration: none;
+        transition: .2s ease;
+    }
+
+    .btn-ver-libro:hover {
+        color: #111827;
+        border-color: #67e8f9;
+        background: #67e8f9;
+    }
+
+    .estado-vacio {
+        padding: 3rem 1rem;
+        border: 1px dashed rgba(148, 163, 184, .25);
+        border-radius: 13px;
+        background: rgba(32, 37, 50, .5);
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .estado-vacio > i {
+        display: block;
+        margin-bottom: 1rem;
+        color: #67e8f9;
+        font-size: 2.5rem;
+    }
+
+    .estado-vacio h3 {
+        color: #e2e8f0;
+        font-size: 1.1rem;
+    }
+
+    .compra-panel {
+        width: 100%;
+        padding: 2rem;
+        border: 1px solid rgba(148, 163, 184, .16);
+        border-radius: 18px;
+        background: #111827;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, .22);
+    }
+
+    .compra-title {
+        color: #f1f5f9 !important;
+    }
+
+    @@media (max-width: 650px) {
+        .libro-compra-card {
+            flex-direction: column;
+        }
+
+        .libro-imagen {
+            width: 100%;
+            min-width: 0;
+            min-height: 180px;
+        }
+
+        .libro-imagen img {
+            height: 210px;
+        }
+
+        .libro-principal {
+            flex-direction: column;
+        }
+
+        .libro-footer {
+            align-items: flex-start;
+        }
+
+        .btn-ver-libro {
+            margin-left: 0;
+        }
+
+        .productos-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .buscador-compra {
+            width: 100%;
+        }
+        
+        .compra-panel {
+            padding: 1rem;
+            border-radius: 13px;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        const compraInicial = @Html.Raw(compraJson);
+
+        Vue.createApp({
+            setup() {
+                const { ref, computed } = Vue;
+
+                const compra = ref(compraInicial);
+                const busqueda = ref("");
+
+                const librosFiltrados = computed(() => {
+                    const termino = busqueda.value
+                        .trim()
+                        .toLocaleLowerCase("es");
+
+                    if (!termino)
+                        return compra.value.detalles;
+
+                    return compra.value.detalles.filter(libro =>
+                        (libro.titulo || "")
+                            .toLocaleLowerCase("es")
+                            .includes(termino)
+                    );
+                });
+
+                const formatoMoneda = valor => {
+                    return new Intl.NumberFormat("es-AR", {
+                        style: "currency",
+                        currency: "ARS"
+                    }).format(Number(valor) || 0);
+                };
+
+                const formatoFecha = fecha => {
+                    if (!fecha)
+                        return "No disponible";
+
+                    const [anio, mes, dia] = fecha.split("-");
+
+                    return `${dia}/${mes}/${anio}`;
+                };
+
+                return {
+                    compra,
+                    busqueda,
+                    librosFiltrados,
+                    formatoMoneda,
+                    formatoFecha
+                };
+            }
+        }).mount("#compraApp");
+    </script>
+}

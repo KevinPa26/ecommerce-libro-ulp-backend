@@ -80,8 +80,10 @@ public class CompraRepository : ICompraRepository
 	public async Task<Compra?> ObtenerPorId(int id)
 	{
 		return await _context.Compras
-			.Where(c => c.Id.Equals(id))
-			.FirstAsync();
+			.Include(c => c.Detalles)
+				.ThenInclude(d => d.Libro)
+					.ThenInclude(l => l!.Imagenes)
+			.FirstOrDefaultAsync(c => c.Id == id);
 	}
 
 	public async Task<List<Compra>> ObtenerTodos()

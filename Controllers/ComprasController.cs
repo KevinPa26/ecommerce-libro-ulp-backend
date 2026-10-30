@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
+    [Authorize(Roles = "USUARIO")]
     public class ComprasController : Controller
     {
         private readonly ICompraRepository _compraRepository;
@@ -14,12 +15,29 @@ namespace ecommerce_libro_ulp_backend.Controllers
             _compraRepository = compraRepository;
         }
 
-        public async Task<IActionResult> Index(DateOnly? fechaExacta, DateOnly? desde, DateOnly? hasta, int page = 1, int pageSize = 10)
+        
+        public async Task<IActionResult> Index(
+            DateOnly? fechaExacta,
+            DateOnly? desde,
+            DateOnly? hasta,
+            int page = 1,
+            int pageSize = 10)
         {
-            int? usuarioId = null; 
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out int usuarioId))
+                return Unauthorized();
+
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 50);
 
             var (compras, totalCount) = await _compraRepository.ObtenerTodos(
-                fechaExacta, desde, hasta, page, pageSize, usuarioId
+                fechaExacta,
+                desde,
+                hasta,
+                page,
+                pageSize,
+                usuarioId
             );
 
             int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -34,24 +52,26 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(compras);
         }
 
+
         // GET: Compras/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
-            // Uso del repositorio en lugar del contexto de base de datos
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out int usuarioId))
+                return Unauthorized();
+
             var compra = await _compraRepository.ObtenerPorId(id.Value);
-            
-            if (compra == null)
-            {
+
+            if (compra == null || compra.UsuarioId != usuarioId)
                 return NotFound();
-            }
 
             return View(compra);
         }
+
 
         // [Authorize(Roles = "USUARIO")]
         [HttpPost]
@@ -65,17 +85,17 @@ namespace ecommerce_libro_ulp_backend.Controllers
             }
 
             // 1. Obtener el ID del usuario actual de manera segura desde los Claims
-            // var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier); // O ClaimTypes.Name según tu configuración de Identity
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier); // O ClaimTypes.Name según tu configuración de Identity
             
-            // if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int usuarioId))
-            // {
-            //     return Unauthorized();
-            // }
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int usuarioId))
+            {
+                return Unauthorized();
+            }
 
             // 2. Instanciar la Compra y asignar los datos de cabecera
             var compra = new Compra
             {
-                UsuarioId = 19,
+                UsuarioId = usuarioId,
                 FechaCompra = DateOnly.FromDateTime(DateTime.Now),
                 Detalles = detalles
             };

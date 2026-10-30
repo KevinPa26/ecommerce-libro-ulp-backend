@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class UsuariosController : Controller
     {
         private readonly IUsuarioRepository _usuarioRepository;
