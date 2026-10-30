@@ -40,7 +40,7 @@ builder.Services
     .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
-        // options.AccessDeniedPath = "/Usuario/AccessDenied";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
 
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
@@ -163,7 +163,7 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Libros}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 

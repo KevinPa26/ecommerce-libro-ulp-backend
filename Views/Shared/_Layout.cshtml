@@ -191,7 +191,7 @@
     </style>
 </head>
 
-<body>
+<body class="d-flex flex-column min-vh-100">
     @{
         bool IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
         var NombreUsuario = User?.Identity?.Name
@@ -221,8 +221,9 @@
                 <div class="collapse navbar-collapse" id="navbarPrincipal">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">
-                                <i class="bi bi-house-door"></i>Inicio
+                            <a asp-controller="Libros" asp-action="Index" class="nav-link">
+                                <i class="bi bi-house-door me-1"></i>
+                                Inicio
                             </a>
                         </li>
 
@@ -247,12 +248,6 @@
                                 </a>
                             </li>
                         }
-
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Libros" asp-action="Index">
-                                <i class="bi bi-book"></i>Libros
-                            </a>
-                        </li>
 
 
                         <li class="nav-item">
@@ -357,18 +352,47 @@
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-4">
-            @RenderBody()
-        </main>
-    </div>
+    <main role="main" class="container flex-grow-1 pb-4">
+        @RenderBody()
+    </main>
 
-    <footer class="border-top footer text-muted mt-4 py-3">
+    
+    <footer class="mt-auto py-4 bg-dark text-light">
         <div class="container">
-            &copy; 2026 - ecommerce_libro_ulp_backend -
-            <a asp-controller="Home" asp-action="Privacy">Privacidad</a>
+            <div class="row align-items-center gy-3">
+
+                <div class="col-md-6 text-center text-md-start">
+                    <a asp-controller="Libros"
+                    asp-action="Index"
+                    class="text-decoration-none fw-bold text-white">
+                        <i class="bi bi-book-half text-primary me-2"></i>
+                        Librería ULP
+                    </a>
+
+                    <p class="text-white-50 small mb-0 mt-1">
+                        Un espacio para descubrir tu próxima lectura.
+                    </p>
+                </div>
+
+                <div class="col-md-6 text-center text-md-end">
+                    <a asp-controller="Home"
+                    asp-action="Privacy"
+                    class="text-decoration-none text-white-50 small">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Privacidad
+                    </a>
+
+                    <span class="text-white-50 mx-2">·</span>
+
+                    <span class="text-white-50 small">
+                        © 2026 Librería ULP
+                    </span>
+                </div>
+
+            </div>
         </div>
     </footer>
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

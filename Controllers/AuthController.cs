@@ -24,4 +24,10 @@ public class AuthController : Controller
     {
         return View();
     }
+
+    [HttpGet("AccessDenied")]
+    public IActionResult AccessDenied()
+    {
+        return View();
+    }
 }
