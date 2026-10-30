@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ecommerce_libro_ulp_backend.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace ecommerce_libro_ulp_backend.Controllers
 {
@@ -17,22 +18,16 @@ namespace ecommerce_libro_ulp_backend.Controllers
         }
 
         // GET: Favoritos
-        public async Task<IActionResult> Index(int? usuarioId)
+        public async Task<IActionResult> Index()
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+            {
+                return Unauthorized();
+            }
+            
             try
             {
-                List<Favorito> favoritos;
-
-                // Si se proporciona un ID de usuario por parámetro, filtramos sus favoritos; si no, traemos todos.
-                if (usuarioId.HasValue)
-                {
-                    favoritos = await _favoritoRepository.ObtenerPorUsuarioId(usuarioId.Value);
-                }
-                else
-                {
-                    favoritos = await _favoritoRepository.ObtenerTodos();
-                }
-
+                List<Favorito> favoritos = await _favoritoRepository.ObtenerPorUsuarioId(usuarioId);
                 return View(favoritos);
             }
             catch (Exception ex)
