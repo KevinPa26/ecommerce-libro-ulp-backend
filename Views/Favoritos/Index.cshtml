@@ -4,7 +4,8 @@
 	ViewData["Title"] = "Mis favoritos";
 }
 
-<div class="container py-4">
+<div id="app" class="container py-4">
+	@Html.AntiForgeryToken()
 	<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 		<div>
 			<h1 class="h2 mb-1">Mis favoritos</h1>
@@ -50,7 +51,7 @@
 									}
 								</td>
 								<td class="text-end">
-									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos" v-on:click="quitar(@favorito.UsuarioId, @favorito.LibroId)">
 										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 									</button>
 								</td>
@@ -62,3 +63,40 @@
 		</div>
 	}
 </div>
+
+@section Scripts {
+	<!-- Script de Vue 3 (Options API) -->
+	<script>
+		Vue.createApp({
+			methods: {
+				async quitar(usuarioId, libroId) {
+					const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+					const form = new URLSearchParams();
+					form.append("usuarioId", usuarioId);
+					form.append("libroId", libroId);
+					if (tokenInput) form.append("__RequestVerificationToken", tokenInput.value);
+
+					try {
+						const response = await fetch("@Url.Action("Eliminar", "Favoritos")", {
+							method: "POST",
+							credentials: "same-origin",
+						headers: {
+								"Accept": "text/html"
+						},
+						body: form
+						});
+
+						if (response.ok) {
+							window.location.reload();
+						} else {
+							throw new Error(`Error ${response.status}`);
+						}
+					} catch (error) {
+						console.error(error);
+						alert("No se pudo quitar de favoritos: " + error.message);
+					}
+				}
+			}
+		}).mount('#app')
+	</script>
+}
