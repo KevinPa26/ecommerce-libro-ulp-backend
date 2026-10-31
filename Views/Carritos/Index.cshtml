@@ -91,8 +91,9 @@
 		</div>
 
 		<div class="d-flex justify-content-end mt-4">
-			<button type="button" class="btn btn-primary">
-				<i class="bi bi-bag-check me-1" aria-hidden="true"></i>Comprar
+			<button type="button" class="btn btn-primary" v-on:click="comprar" :disabled="procesando">
+				<i class="bi bi-bag-check me-1" aria-hidden="true"></i>
+				{{ procesando ? 'Procesando compra...' : 'Comprar' }}
 			</button>
 		</div>
 	}
@@ -101,6 +102,12 @@
 <!-- Script de Vue 3 (Options API) -->
 <script>
 	Vue.createApp({
+		data() {
+			return {
+				procesando: false,
+				carritos: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(carritos))
+			};
+		},
 		methods: {
 			async quitar(carritoId) {
 				const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
@@ -126,6 +133,53 @@
 				} catch (error) {
 					console.error(error);
 					alert("No se pudo quitar del carrito: " + error.message);
+				}
+			},
+			async comprar() {
+				if (!confirm('¿Confirmas la compra de los libros en tu carrito?')) {
+					return;
+				}
+
+				this.procesando = true;
+
+				const detalles = this.carritos.map(carrito => ({
+					LibroId: carrito.LibroId,
+					Cantidad: carrito.Cantidad
+				}));
+
+				if (!detalles.length) {
+					alert('Tu carrito está vacío.');
+					this.procesando = false;
+					return;
+				}
+
+				const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+				const token = tokenElement ? tokenElement.value : '';
+
+				try {
+					const response = await fetch('/Compras/Crear', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'RequestVerificationToken': token
+						},
+						body: JSON.stringify(detalles)
+					});
+
+					if (response.redirected) {
+						window.location.href = response.url;
+					} else if (response.ok) {
+						alert('¡Compra realizada con éxito!');
+						window.location.href = '/Compras/Index';
+					} else {
+						const errorTexto = await response.text();
+						alert('No se pudo procesar la compra: ' + errorTexto);
+						this.procesando = false;
+					}
+				} catch (error) {
+					console.error('Error de red:', error);
+					alert('Ocurrió un error al conectar con el servidor.');
+					this.procesando = false;
 				}
 			}
 		}
