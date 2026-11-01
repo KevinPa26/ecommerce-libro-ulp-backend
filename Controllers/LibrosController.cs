@@ -10,13 +10,15 @@ namespace ecommerce_libro_ulp_backend.Controllers
         private readonly ILibroRepository _libroRepository;
         private readonly IImagenLibroRepository _imagenLibroRepository;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IFavoritoRepository _favoritoRepository;
         private readonly ILogger<LibrosController> _logger;
 
-        public LibrosController(ILibroRepository libroRepository, IImagenLibroRepository imagenLibroRepository, IWebHostEnvironment webHostEnvironment, ILogger<LibrosController> logger)
+        public LibrosController(ILibroRepository libroRepository, IImagenLibroRepository imagenLibroRepository, IFavoritoRepository favoritoRepository, IWebHostEnvironment webHostEnvironment, ILogger<LibrosController> logger)
         {
             _libroRepository = libroRepository;
             _imagenLibroRepository = imagenLibroRepository;
             _webHostEnvironment = webHostEnvironment;
+            _favoritoRepository = favoritoRepository;
             _logger = logger;
         }
 
@@ -57,6 +59,12 @@ namespace ecommerce_libro_ulp_backend.Controllers
                 {
                     _logger.LogWarning("No se encontró el libro con ID {LibroId}", id);
                     return NotFound();
+                }
+
+                // Cargamos el estado de favorito en el ViewBag si se esta logueado.
+                if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuario_id))
+                {
+                    ViewBag.EsFavorito = await _favoritoRepository.isFavorito(usuario_id, libro.Id);
                 }
 
                 return View(libro);

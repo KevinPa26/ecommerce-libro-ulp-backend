@@ -167,7 +167,7 @@
             return {
                 libro: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)),
                 imagenActiva: '',
-                esFavorito: false,
+                esFavorito: @((bool)(ViewBag.EsFavorito ?? false)).ToString().ToLower(),
                 procesando: false,
                 cantidad: 1, // Cantidad inicial por defecto
                 errorCantidad: '',
