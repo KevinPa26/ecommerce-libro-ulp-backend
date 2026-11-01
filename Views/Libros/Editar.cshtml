@@ -1,0 +1,265 @@
+@model ecommerce_libro_ulp_backend.Models.Libro
+
+@{
+    ViewData["Title"] = "Editar Libro";
+}
+
+<div id="app" class="container mt-4 mb-5">
+    <!-- Breadcrumb y Título -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Libros</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar Libro</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-pencil-square"></i> Editar Información del Libro
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-book"></i> Formulario de Edición</h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Formulario con enctype para soportar archivos múltiples -->
+                    <form asp-action="Editar" method="post" enctype="multipart/form-data" @@submit="validarFormulario">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <!-- Campo oculto para el ID fundamental -->
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="VendedorId" />
+
+                        <!-- Inputs ocultos para enviar los IDs de las imágenes que se decidan eliminar -->
+                        <input type="hidden" v-for="id in imagenesAEliminar" name="imagenesAEliminar" :value="id" />
+
+                        <div class="row g-3">
+                            <!-- ISBN-13 (INMUTABLE / Solo lectura) -->
+                            <div class="col-md-6">
+                                <label asp-for="Isbn13" class="form-label fw-bold">ISBN-13 <span class="text-muted fw-normal small">(No modificable)</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-upc-scan text-muted"></i></span>
+                                    <input asp-for="Isbn13" class="form-control bg-light" readonly />
+                                </div>
+                            </div>
+
+                            <!-- Título (INMUTABLE / Solo lectura por seguridad histórica) -->
+                            <div class="col-md-6">
+                                <label asp-for="Titulo" class="form-label fw-bold">Título del Libro <span class="text-muted fw-normal small">(No modificable)</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-type text-muted"></i></span>
+                                    <input asp-for="Titulo" class="form-control bg-light" readonly />
+                                </div>
+                            </div>
+
+                            <!-- Autor (INMUTABLE / Solo lectura) -->
+                            <div class="col-md-12">
+                                <label asp-for="Autor" class="form-label fw-bold">Autor <span class="text-muted fw-normal small">(No modificable)</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-pen text-muted"></i></span>
+                                    <input asp-for="Autor" class="form-control bg-light" readonly />
+                                </div>
+                            </div>
+
+                            <!-- Precio (EDITABLE) -->
+                            <div class="col-md-4">
+                                <label asp-for="Precio" class="form-label fw-bold">Precio ($) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
+                                    <input asp-for="Precio" type="number" step="0.01" min="0.01" v-model.number="form.precio" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Precio" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Stock (EDITABLE) -->
+                            <div class="col-md-4">
+                                <label asp-for="Stock" class="form-label fw-bold">Stock Actual *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-boxes"></i></span>
+                                    <input asp-for="Stock" type="number" min="1" v-model.number="form.stock" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Stock" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Estado (EDITABLE) -->
+                            <div class="col-md-4">
+                                <label asp-for="Estado" class="form-label fw-bold">Estado *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
+                                    <select asp-for="Estado" v-model="form.estado" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoLibro>()">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Estado" class="text-danger small"></span>
+                            </div>
+
+                            <!-- SECCIÓN: IMÁGENES ACTUALES GUARDADAS -->
+                            <div class="col-12 mt-4" v-if="imagenesActuales.length > 0">
+                                <label class="form-label fw-bold text-secondary">
+                                    <i class="bi bi-images text-primary"></i> Imágenes Actuales en el Catálogo
+                                </label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div v-for="img in imagenesActuales" :key="img.Id" class="position-relative border rounded p-1 shadow-sm bg-light" style="width: 110px; height: 110px;">
+                                        <img :src="img.Path" class="w-100 h-100 object-fit-cover rounded" />
+                                        <!-- Badge de principal -->
+                                        <span v-if="img.EsPrincipal" class="position-absolute bottom-0 start-0 badge bg-success m-1 small" style="font-size: 0.65rem;">Principal</span>
+                                        <!-- Botón para eliminar imagen existente -->
+                                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex justify-content-center align-items-center shadow" style="width: 26px; height: 26px;" @@click="eliminarImagenActual(img.Id)" title="Eliminar imagen">
+                                            <i class="bi bi-x fs-6"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">Puedes eliminar las fotos que ya no desees conservando al menos una.</small>
+                            </div>
+
+                            <!-- Subida de Nuevas Fotografías -->
+                            <div class="col-12 mt-3">
+                                <label for="archivosFotos" class="form-label fw-bold">
+                                    <i class="bi bi-plus-circle text-primary"></i> Agregar Nuevas Fotografías
+                                </label>
+                                <div class="input-group">
+                                    <input type="file" id="archivosFotos" name="archivosFotos" class="form-control" accept=".jpg, .jpeg, .png, .webp" multiple @@change="onFilesChange" />
+                                </div>
+                            </div>
+
+                            <!-- Contenedor de Vistas Previas (Miniaturas Nuevas) -->
+                            <div class="col-12" v-if="previews.length > 0">
+                                <label class="form-label small text-secondary fw-semibold d-block">Vista previa de nuevas imágenes:</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div v-for="(img, index) in previews" :key="index" class="position-relative border rounded p-1 shadow-sm bg-light" style="width: 110px; height: 110px;">
+                                        <img :src="img" class="w-100 h-100 object-fit-cover rounded" />
+                                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex justify-content-center align-items-center shadow" style="width: 26px; height: 26px;" @@click="removerImagenNueva(index)" title="Quitar imagen nueva">
+                                            <i class="bi bi-x fs-6"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Descripción del Vendedor (EDITABLE) -->
+                            <div class="col-12 mt-3">
+                                <label asp-for="DescripcionVendedor" class="form-label fw-bold">Descripción del Vendedor (Estado del libro, detalles de uso)</label>
+                                <textarea asp-for="DescripcionVendedor" v-model="form.descripcionVendedor" class="form-control" rows="3"></textarea>
+                                <span asp-validation-for="DescripcionVendedor" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Sinopsis / Descripción General (EDITABLE) -->
+                            <div class="col-12">
+                                <label asp-for="DescripcionLibro" class="form-label fw-bold">Sinopsis / Descripción General del Libro</label>
+                                <textarea asp-for="DescripcionLibro" v-model="form.descripcionLibro" class="form-control" rows="3"></textarea>
+                                <span asp-validation-for="DescripcionLibro" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Listado
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Vue 3 (Options API) -->
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                // Serializamos el libro completo desde C# para leer sus imágenes actuales de forma limpia
+                libroOriginal: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)),
+                imagenesActuales: [],
+                imagenesAEliminar: [],
+                form: {
+                    precio: @Model.Precio.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    stock: @Model.Stock,
+                    estado: @((int)Model.Estado),
+                    descripcionVendedor: @Json.Serialize(Model.DescripcionVendedor ?? ""),
+                    descripcionLibro: @Json.Serialize(Model.DescripcionLibro ?? "")
+                },
+                archivosSeleccionados: [],
+                previews: []
+            }
+        },
+        mounted() {
+            // Inicializamos el arreglo con las imágenes que ya trae el modelo de la BD
+            if (this.libroOriginal && this.libroOriginal.Imagenes) {
+                this.imagenesActuales = this.libroOriginal.Imagenes;
+            }
+        },
+        methods: {
+            eliminarImagenActual(id) {
+                // Añadimos el ID a la lista de eliminaciones para enviarlo al backend
+                this.imagenesAEliminar.push(id);
+                // La quitamos de la vista actual
+                this.imagenesActuales = this.imagenesActuales.filter(img => img.Id !== id);
+            },
+            onFilesChange(e) {
+                const files = Array.from(e.target.files);
+                
+                // Validar límite total (imágenes que quedan + las nuevas)
+                const totalImagenesRestantes = this.imagenesActuales.length + files.length;
+                if (totalImagenesRestantes > 4) {
+                    alert('El libro no puede tener más de 4 imágenes en total.');
+                    e.target.value = '';
+                    return;
+                }
+
+                this.archivosSeleccionados = files;
+                this.previews = [];
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        this.previews.push(evt.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            },
+            removerImagenNueva(index) {
+                this.archivosSeleccionados.splice(index, 1);
+                this.previews.splice(index, 1);
+                
+                if (this.archivosSeleccionados.length === 0) {
+                    document.getElementById('archivosFotos').value = '';
+                }
+            },
+            validarFormulario(e) {
+                if (!this.form.precio || this.form.precio <= 0) {
+                    e.preventDefault();
+                    alert('Por favor ingrese un precio válido.');
+                    return;
+                }
+
+                if (this.form.stock < 0) {
+                    e.preventDefault();
+                    alert('El stock no puede ser negativo.');
+                    return;
+                }
+
+                const totalFinal = this.imagenesActuales.length + this.archivosSeleccionados.length;
+                if (totalFinal === 0) {
+                    e.preventDefault();
+                    alert('El libro debe tener al menos 1 imagen.');
+                    return;
+                }
+            }
+        }
+    }).mount('#app');
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
