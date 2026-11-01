@@ -125,7 +125,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     // Nota: Asegúrate de que tu método CrearAsync en el repositorio asigne el ID al objeto `libro` (o guarde los cambios y devuelva el objeto con el ID poblado).
 
                     // 4. Procesar y guardar las imágenes asociadas
-                    for (int i = 0; i < archivosFotos.Count; i++)
+                    for (int i = 0; i < archivosFotos!.Count; i++) // ! -> ModelState.IsValid daria falso si archivosFotos fuese nulo, ver paso (2)
                     {
                         var archivo = archivosFotos[i];
                         if (archivo != null && archivo.Length > 0)
