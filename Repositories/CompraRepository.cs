@@ -17,6 +17,7 @@ public class CompraRepository : ICompraRepository
 		try
 		{
 			decimal totalCompra = 0;
+			var libroIdsComprados = new List<int>();
 
 			foreach (var detalle in compra.Detalles)
 			{
@@ -48,14 +49,18 @@ public class CompraRepository : ICompraRepository
 
 				// Calcular acumulador total
 				totalCompra += detalle.Cantidad * detalle.PrecioUnitario;
+
+				libroIdsComprados.Add(detalle.LibroId);
 			}
 
 			compra.Total = totalCompra;
-
-			// Guardar la cabecera de la compra primero para obtener su ID
 			_context.Compras.Add(compra);
-			await _context.SaveChangesAsync(); // Aquí EF Core ya asigna compra.Id a los detalles por la navegación
+			await _context.SaveChangesAsync();
 
+			var itemsCarritoAEliminar = _context.Carritos.Where(c => c.UsuarioId == compra.UsuarioId && libroIdsComprados.Contains(c.LibroId));
+			_context.Carritos.RemoveRange(itemsCarritoAEliminar);
+        	await _context.SaveChangesAsync();
+			
 			await transaction.CommitAsync();
 		}
 		catch (Exception)
