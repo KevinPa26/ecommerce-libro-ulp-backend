@@ -61,11 +61,18 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     return NotFound();
                 }
 
-                // Cargamos el estado de favorito en el ViewBag si se esta logueado.
-                if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuario_id))
+                bool esFavorito = false;
+
+                if (User.Identity!.IsAuthenticated)
                 {
-                    ViewBag.EsFavorito = await _favoritoRepository.isFavorito(usuario_id, libro.Id);
+                    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (int.TryParse(userIdClaim, out int usuarioId))
+                    {
+                        esFavorito = await _favoritoRepository.isFavorito(usuarioId, libro.Id);
+                    }
                 }
+
+                ViewBag.EsFavorito = esFavorito;
 
                 return View(libro);
             }
