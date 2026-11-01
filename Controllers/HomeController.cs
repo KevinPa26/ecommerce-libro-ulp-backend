@@ -8,7 +8,7 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
-        return RedirectToAction("Index", "Libros");
+        return View();
     }
 
     public IActionResult Privacy()
