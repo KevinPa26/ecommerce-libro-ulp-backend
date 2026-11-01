@@ -23,6 +23,11 @@ public class FavoritoRepository : IFavoritoRepository
 			.FirstOrDefaultAsync();
 	}
 
+	public async Task<bool> isFavorito(int usuario_id, int libro_id)
+	{
+		return await _context.Favoritos.AnyAsync(f => f.UsuarioId.Equals(usuario_id) && f.LibroId.Equals(libro_id));
+	}
+
 	public async Task<List<Favorito>> ObtenerTodos()
 	{
 		return await _context.Favoritos
