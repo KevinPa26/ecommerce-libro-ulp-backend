@@ -240,11 +240,17 @@
             document.getElementById("rolPerfil").textContent = usuario.rol;
 
             const avatar = document.getElementById("avatarPerfil");
-            avatar.src = usuario.avatar || "/images/avatar-default.png";
+            const avatarPorDefecto = "/images/default-avatar.svg";
+
+            const rutaAvatar = usuario.avatar?.trim();
+
             avatar.onerror = () => {
                 avatar.onerror = null;
-                avatar.src = "/images/avatar-default.png";
+                avatar.src = avatarPorDefecto;
+                avatarOriginal = avatarPorDefecto;
             };
+
+            avatar.src = rutaAvatar || avatarPorDefecto;
             avatarOriginal = avatar.src;
 
             cargando.classList.add("d-none");
