@@ -1,3 +1,4 @@
+
 @model ecommerce_libro_ulp_backend.Models.Libro
 
 @{
@@ -5,216 +6,637 @@
 }
 
 <div id="app" class="container mt-4 mb-5">
-    <!-- Breadcrumb y Título -->
+
+    <!-- Breadcrumb y título -->
     <div class="mb-4">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1">
                 <li class="breadcrumb-item"><a href="/">Inicio</a></li>
-                <li class="breadcrumb-item"><a asp-action="Index">Libros</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Nuevo Libro</li>
+                <li class="breadcrumb-item">
+                    <a asp-action="Index">Libros</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Nuevo Libro
+                </li>
             </ol>
         </nav>
+
         <h2 class="fw-bold text-primary">
             <i class="bi bi-journal-plus"></i> Registrar Nuevo Libro
         </h2>
     </div>
 
+    <!-- Notificación Bootstrap -->
+    <div v-if="notificacion.mensaje"
+         class="alert alert-dismissible fade show shadow-sm"
+         :class="'alert-' + notificacion.tipo"
+         role="alert">
+
+        <i class="bi bi-info-circle me-2"></i>
+        {{ notificacion.mensaje }}
+
+        <button type="button"
+                class="btn-close"
+                @@click="notificacion.mensaje = ''">
+        </button>
+    </div>
+
     <div class="row">
         <div class="col-md-10 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white py-3">
-                    <h5 class="card-title mb-0"><i class="bi bi-book"></i> Formulario de Publicación</h5>
-                </div>
-                <div class="card-body p-4">
-                    <!-- Formulario con enctype para soportar archivos múltiples -->
-                    <form asp-action="Crear" method="post" enctype="multipart/form-data">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
 
-                        <!-- Campo oculto para el VendedorId (asignado automáticamente desde el usuario logueado en el backend) -->
-                        <input type="hidden" asp-for="VendedorId" value="1"/>
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-book"></i> Formulario de Publicación
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+
+                    <form asp-action="Crear"
+                          method="post"
+                          enctype="multipart/form-data"
+                          @@submit.prevent="guardarLibro"
+                          ref="formulario">
+
+                        @Html.AntiForgeryToken()
 
                         <div class="row g-3">
-                            <!-- ISBN-13 -->
+
+                            <!-- ISBN -->
                             <div class="col-md-6">
-                                <label asp-for="Isbn13" class="form-label fw-bold">ISBN-13</label>
+
+                                <label asp-for="Isbn13" class="form-label fw-bold">
+                                    ISBN-13
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                                    <input asp-for="Isbn13" v-model="form.isbn13" class="form-control" maxlength="13" placeholder="Ej: 9789871138241" />
+                                    <span class="input-group-text">
+                                        <i class="bi bi-upc-scan"></i>
+                                    </span>
+
+                                    <input asp-for="Isbn13"
+                                           v-model.trim="form.isbn13"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.isbn13 }"
+                                           maxlength="13"
+                                           placeholder="Ej: 9789871138241" />
                                 </div>
-                                <span asp-validation-for="Isbn13" class="text-danger small"></span>
+
+                                <small v-if="errores.isbn13"
+                                       class="text-danger">
+                                    {{ errores.isbn13 }}
+                                </small>
+
                             </div>
 
                             <!-- Título -->
                             <div class="col-md-6">
-                                <label asp-for="Titulo" class="form-label fw-bold">Título del Libro *</label>
+
+                                <label asp-for="Titulo" class="form-label fw-bold">
+                                    Título del Libro *
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-type"></i></span>
-                                    <input asp-for="Titulo" v-model="form.titulo" class="form-control" required maxlength="150" placeholder="Título de la obra" />
+                                    <span class="input-group-text">
+                                        <i class="bi bi-type"></i>
+                                    </span>
+
+                                    <input asp-for="Titulo"
+                                           v-model.trim="form.titulo"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.titulo }"
+                                           maxlength="150"
+                                           placeholder="Título de la obra" />
                                 </div>
-                                <span asp-validation-for="Titulo" class="text-danger small"></span>
+
+                                <small v-if="errores.titulo"
+                                       class="text-danger">
+                                    {{ errores.titulo }}
+                                </small>
+
                             </div>
 
                             <!-- Autor -->
                             <div class="col-md-12">
-                                <label asp-for="Autor" class="form-label fw-bold">Autor *</label>
+
+                                <label asp-for="Autor" class="form-label fw-bold">
+                                    Autor *
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-pen"></i></span>
-                                    <input asp-for="Autor" v-model="form.autor" class="form-control" required maxlength="100" placeholder="Nombre del autor o autores" />
+                                    <span class="input-group-text">
+                                        <i class="bi bi-pen"></i>
+                                    </span>
+
+                                    <input asp-for="Autor"
+                                           v-model.trim="form.autor"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.autor }"
+                                           maxlength="100"
+                                           placeholder="Nombre del autor o autores" />
                                 </div>
-                                <span asp-validation-for="Autor" class="text-danger small"></span>
+
+                                <small v-if="errores.autor"
+                                       class="text-danger">
+                                    {{ errores.autor }}
+                                </small>
+
                             </div>
 
                             <!-- Precio -->
                             <div class="col-md-4">
-                                <label asp-for="Precio" class="form-label fw-bold">Precio ($) *</label>
+
+                                <label asp-for="Precio" class="form-label fw-bold">
+                                    Precio ($) *
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
-                                    <input asp-for="Precio" type="number" step="0.01" min="0.01" v-model.number="form.precio" class="form-control" required placeholder="0.00" />
+                                    <span class="input-group-text">
+                                        <i class="bi bi-currency-dollar"></i>
+                                    </span>
+
+                                    <input asp-for="Precio"
+                                           type="number"
+                                           step="0.01"
+                                           min="0.01"
+                                           v-model.number="form.precio"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.precio }"
+                                           placeholder="0.00" />
                                 </div>
-                                <span asp-validation-for="Precio" class="text-danger small"></span>
+
+                                <small v-if="errores.precio"
+                                       class="text-danger">
+                                    {{ errores.precio }}
+                                </small>
+
                             </div>
 
                             <!-- Stock -->
                             <div class="col-md-4">
-                                <label asp-for="Stock" class="form-label fw-bold">Stock Inicial *</label>
+
+                                <label asp-for="Stock" class="form-label fw-bold">
+                                    Stock Inicial *
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-boxes"></i></span>
-                                    <input asp-for="Stock" type="number" min="1" v-model.number="form.stock" class="form-control" required />
+                                    <span class="input-group-text">
+                                        <i class="bi bi-boxes"></i>
+                                    </span>
+
+                                    <input asp-for="Stock"
+                                           type="number"
+                                           min="1"
+                                           v-model.number="form.stock"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.stock }" />
                                 </div>
-                                <span asp-validation-for="Stock" class="text-danger small"></span>
+
+                                <small v-if="errores.stock"
+                                       class="text-danger">
+                                    {{ errores.stock }}
+                                </small>
+
                             </div>
 
                             <!-- Estado -->
                             <div class="col-md-4">
-                                <label asp-for="Estado" class="form-label fw-bold">Estado *</label>
+
+                                <label asp-for="Estado" class="form-label fw-bold">
+                                    Estado *
+                                </label>
+
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
-                                    <select asp-for="Estado" v-model="form.estado" class="form-select" asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoLibro>()">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-toggle-on"></i>
+                                    </span>
+
+                                    <select asp-for="Estado"
+                                            v-model="form.estado"
+                                            class="form-select"
+                                            asp-items="Html.GetEnumSelectList<ecommerce_libro_ulp_backend.Models.EstadoLibro>()">
                                     </select>
                                 </div>
-                                <span asp-validation-for="Estado" class="text-danger small"></span>
+
                             </div>
 
-                            <!-- Subida de Fotografías (Mínimo 1, Máximo 4) -->
+                            <!-- Fotografías -->
                             <div class="col-12 mt-4">
-                                <label for="archivosFotos" class="form-label fw-bold">
-                                    <i class="bi bi-images text-primary"></i> Fotografías del Libro (Mínimo 1, Máximo 4) *
+
+                                <label for="archivosFotos"
+                                       class="form-label fw-bold">
+                                    <i class="bi bi-images text-primary"></i>
+                                    Fotografías del Libro (Mínimo 1, Máximo 4) *
                                 </label>
+
                                 <div class="input-group">
-                                    <!-- El name="archivosFotos" coincide exactamente con el parámetro del controlador -->
-                                    <input type="file" id="archivosFotos" name="archivosFotos" class="form-control" accept=".jpg, .jpeg, .png, .webp" multiple @@change="onFilesChange" />
+
+                                    <input type="file"
+                                           id="archivosFotos"
+                                           name="archivosFotos"
+                                           class="form-control"
+                                           :class="{ 'is-invalid': errores.fotos }"
+                                           accept=".jpg,.jpeg,.png,.webp"
+                                           multiple
+                                           @@change="onFilesChange" />
+
                                 </div>
-                                <small class="text-muted">La primera imagen seleccionada se establecerá automáticamente como la **portada principal**. Formatos permitidos: JPG, PNG, WEBP.</small>
+
+                                <small class="text-muted">
+                                    La primera imagen seleccionada será la portada principal.
+                                    Formatos permitidos: JPG, PNG y WEBP.
+                                </small>
+
+                                <div v-if="errores.fotos"
+                                     class="text-danger small mt-1">
+                                    {{ errores.fotos }}
+                                </div>
+
                             </div>
 
-                            <!-- Contenedor de Vistas Previas (Miniaturas) -->
+                            <!-- Previsualización -->
                             <div class="col-12" v-if="previews.length > 0">
-                                <label class="form-label small text-secondary fw-semibold d-block">Vista previa ({{ previews.length }}/4 imágenes):</label>
+
+                                <label class="form-label small text-secondary fw-semibold d-block">
+                                    Vista previa ({{ previews.length }}/4 imágenes):
+                                </label>
+
                                 <div class="d-flex flex-wrap gap-3">
-                                    <div v-for="(img, index) in previews" :key="index" class="position-relative border rounded p-1 shadow-sm bg-light" style="width: 110px; height: 110px;">
-                                        <img :src="img" class="w-100 h-100 object-fit-cover rounded" />
-                                        <!-- Badge indicando cuál es la principal -->
-                                        <span v-if="index === 0" class="position-absolute bottom-0 start-0 badge bg-success m-1 small" style="font-size: 0.65rem;">Principal</span>
-                                        <!-- Botón para quitar imagen -->
-                                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex justify-content-center align-items-center shadow" style="width: 26px; height: 26px;" @@click="removerImagen(index)" title="Quitar imagen">
+
+                                    <div v-for="(img, index) in previews"
+                                         :key="index"
+                                         class="position-relative border rounded p-1 shadow-sm bg-light"
+                                         style="width: 110px; height: 110px;">
+
+                                        <img :src="img.url"
+                                            class="w-100 h-100 object-fit-cover rounded" />
+
+                                        <span v-if="index === 0"
+                                              class="position-absolute bottom-0 start-0 badge bg-success m-1 small"
+                                              style="font-size: 0.65rem;">
+                                            Principal
+                                        </span>
+
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 26px; height: 26px;"
+                                                @@click="removerImagen(index)"
+                                                title="Quitar imagen">
+
                                             <i class="bi bi-x fs-6"></i>
+
                                         </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Descripción del Vendedor -->
+                            <!-- Descripción vendedor -->
                             <div class="col-12 mt-3">
-                                <label asp-for="DescripcionVendedor" class="form-label fw-bold">Descripción del Vendedor (Estado del libro, detalles de uso)</label>
-                                <textarea asp-for="DescripcionVendedor" v-model="form.descripcionVendedor" class="form-control" rows="3" placeholder="Ej: Libro usado en excelente estado, sin marcas ni subrayados..."></textarea>
-                                <span asp-validation-for="DescripcionVendedor" class="text-danger small"></span>
+
+                                <label asp-for="DescripcionVendedor"
+                                       class="form-label fw-bold">
+                                    Descripción del Vendedor
+                                    (Estado del libro, detalles de uso)
+                                </label>
+
+                                <textarea asp-for="DescripcionVendedor"
+                                          v-model.trim="form.descripcionVendedor"
+                                          class="form-control"
+                                          rows="3"
+                                          maxlength="3000"
+                                          placeholder="Ej: Libro usado en excelente estado, sin marcas ni subrayados...">
+                                </textarea>
+
                             </div>
 
-                            <!-- Sinopsis / Descripción General -->
+                            <!-- Descripción libro -->
                             <div class="col-12">
-                                <label asp-for="DescripcionLibro" class="form-label fw-bold">Sinopsis / Descripción General del Libro</label>
-                                <textarea asp-for="DescripcionLibro" v-model="form.descripcionLibro" class="form-control" rows="3" placeholder="Resumen o sinopsis de la obra..."></textarea>
-                                <span asp-validation-for="DescripcionLibro" class="text-danger small"></span>
+
+                                <label asp-for="DescripcionLibro"
+                                       class="form-label fw-bold">
+                                    Sinopsis / Descripción General del Libro
+                                </label>
+
+                                <textarea asp-for="DescripcionLibro"
+                                          v-model.trim="form.descripcionLibro"
+                                          class="form-control"
+                                          rows="3"
+                                          maxlength="3000"
+                                          placeholder="Resumen o sinopsis de la obra...">
+                                </textarea>
+
                             </div>
+
                         </div>
 
                         <hr class="my-4" />
 
-                        <!-- Botones de Acción -->
+                        <!-- Acciones -->
                         <div class="d-flex justify-content-between align-items-center">
-                            <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver al Listado
+
+                            <a asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Volver al Listado
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="bi bi-check-circle"></i> Guardar Libro
+
+                            <button type="submit"
+                                    class="btn btn-primary px-4"
+                                    :disabled="procesando">
+
+                                <span v-if="procesando"
+                                      class="spinner-border spinner-border-sm me-2">
+                                </span>
+
+                                <i v-else class="bi bi-check-circle me-1"></i>
+
+                                {{ procesando ? 'Guardando...' : 'Guardar Libro' }}
+
                             </button>
+
                         </div>
+
                     </form>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Script de Vue 3 (Options API) -->
 <script>
     const { createApp } = Vue;
 
     createApp({
         data() {
             return {
+                procesando: false,
+
                 form: {
                     isbn13: '',
                     titulo: '',
                     autor: '',
-                    precio: '',
+                    precio: null,
                     stock: 1,
-                    estado: 0, // DISPONIBLE por defecto
+                    estado: '0',
                     descripcionVendedor: '',
                     descripcionLibro: ''
                 },
+
                 archivosSeleccionados: [],
-                previews: []
-            }
+                previews: [],
+
+                errores: {
+                    isbn13: '',
+                    titulo: '',
+                    autor: '',
+                    precio: '',
+                    stock: '',
+                    fotos: ''
+                },
+
+                notificacion: {
+                    mensaje: '',
+                    tipo: 'success'
+                }
+            };
         },
+
         methods: {
+
+            validarFormulario() {
+                this.errores = {
+                    isbn13: '',
+                    titulo: '',
+                    autor: '',
+                    precio: '',
+                    stock: '',
+                    fotos: ''
+                };
+
+                let valido = true;
+
+                if (this.form.isbn13 &&
+                    (this.form.isbn13.length < 10 ||
+                     this.form.isbn13.length > 13)) {
+
+                    this.errores.isbn13 =
+                        'El ISBN debe tener entre 10 y 13 caracteres.';
+
+                    valido = false;
+                }
+
+                if (!this.form.titulo) {
+                    this.errores.titulo = 'El título es obligatorio.';
+                    valido = false;
+                } else if (this.form.titulo.length > 150) {
+                    this.errores.titulo =
+                        'El título no puede superar los 150 caracteres.';
+
+                    valido = false;
+                }
+
+                if (!this.form.autor) {
+                    this.errores.autor = 'El autor es obligatorio.';
+                    valido = false;
+                } else if (this.form.autor.length > 100) {
+                    this.errores.autor =
+                        'El autor no puede superar los 100 caracteres.';
+
+                    valido = false;
+                }
+
+                if (!this.form.precio ||
+                    this.form.precio < 0.01 ||
+                    this.form.precio > 999999.99) {
+
+                    this.errores.precio =
+                        'El precio debe estar entre 0,01 y 999.999,99.';
+
+                    valido = false;
+                }
+
+                if (!Number.isInteger(this.form.stock) ||
+                    this.form.stock < 1) {
+
+                    this.errores.stock =
+                        'El stock debe ser como mínimo 1.';
+
+                    valido = false;
+                }
+
+                if (this.archivosSeleccionados.length < 1) {
+                    this.errores.fotos =
+                        'Debes seleccionar al menos una fotografía.';
+
+                    valido = false;
+                } else if (this.archivosSeleccionados.length > 4) {
+                    this.errores.fotos =
+                        'Solo puedes seleccionar un máximo de 4 fotografías.';
+
+                    valido = false;
+                }
+
+                return valido;
+            },
+
             onFilesChange(e) {
                 const files = Array.from(e.target.files);
-                
-                // Validar límite máximo de 4 fotos
+
+                this.archivosSeleccionados = [];
+                this.previews = [];
+                this.errores.fotos = '';
+
                 if (files.length > 4) {
-                    alert('Solo puedes seleccionar un máximo de 4 imágenes.');
+                    this.errores.fotos =
+                        'Solo puedes seleccionar un máximo de 4 imágenes.';
+
                     e.target.value = '';
-                    this.archivosSeleccionados = [];
-                    this.previews = [];
+                    return;
+                }
+
+                const formatosPermitidos = [
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp'
+                ];
+
+                const archivoInvalido = files.some(file =>
+                    !formatosPermitidos.includes(file.type)
+                );
+
+                if (archivoInvalido) {
+                    this.errores.fotos =
+                        'Formato inválido. Utiliza JPG, PNG o WEBP.';
+
+                    e.target.value = '';
                     return;
                 }
 
                 this.archivosSeleccionados = files;
-                this.previews = [];
 
-                // Generar vistas previas con FileReader
                 files.forEach(file => {
                     const reader = new FileReader();
+
                     reader.onload = (evt) => {
-                        this.previews.push(evt.target.result);
+                        this.previews.push({
+                            nombre: file.name,
+                            url: evt.target.result
+                        });
                     };
+
                     reader.readAsDataURL(file);
                 });
             },
+
             removerImagen(index) {
                 this.archivosSeleccionados.splice(index, 1);
                 this.previews.splice(index, 1);
-                
-                // Si se eliminan todas, limpiamos el input file del DOM
+
+                // Sincronizar el input file con los archivos restantes.
+                const input = document.getElementById('archivosFotos');
+                const transfer = new DataTransfer();
+
+                this.archivosSeleccionados.forEach(file => {
+                    transfer.items.add(file);
+                });
+
+                input.files = transfer.files;
+
                 if (this.archivosSeleccionados.length === 0) {
-                    document.getElementById('archivosFotos').value = '';
+                    input.value = '';
                 }
+            },
+
+            async guardarLibro() {
+                this.notificacion.mensaje = '';
+
+                if (!this.validarFormulario()) {
+                    return;
+                }
+
+                this.procesando = true;
+
+                try {
+                    const formData = new FormData(this.$refs.formulario);
+
+                    const response = await fetch(this.$refs.formulario.action, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(
+                            data.message || 'No se pudo registrar el libro.'
+                        );
+                    }
+
+                    this.mostrarNotificacion(
+                        data.message || 'El libro se registró correctamente.',
+                        'success'
+                    );
+
+                    this.limpiarFormulario();
+
+                } catch (error) {
+                    this.mostrarNotificacion(
+                        error.message || 'Ocurrió un error al registrar el libro.',
+                        'danger'
+                    );
+                } finally {
+                    this.procesando = false;
+                }
+            },
+
+            limpiarFormulario() {
+                this.form = {
+                    isbn13: '',
+                    titulo: '',
+                    autor: '',
+                    precio: null,
+                    stock: 1,
+                    estado: '0',
+                    descripcionVendedor: '',
+                    descripcionLibro: ''
+                };
+
+                this.archivosSeleccionados = [];
+                this.previews = [];
+
+                this.$refs.formulario.reset();
+
+                this.errores = {
+                    isbn13: '',
+                    titulo: '',
+                    autor: '',
+                    precio: '',
+                    stock: '',
+                    fotos: ''
+                };
+            },
+
+            mostrarNotificacion(mensaje, tipo = 'success') {
+                this.notificacion = {
+                    mensaje,
+                    tipo
+                };
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             }
         }
     }).mount('#app');
 </script>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}

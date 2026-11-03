@@ -62,7 +62,7 @@ public class LibroRepository : ILibroRepository
         int pageSize)
     {
         var query = _context.Libros
-            .Include(l => l.Imagenes) // Incluimos las imágenes para las tarjetas
+            .Include(l => l.Imagenes)
             .AsQueryable();
 
         // 1. Filtro por Título
@@ -88,10 +88,9 @@ public class LibroRepository : ILibroRepository
 
         // 4. Filtro por Estado (Mapeando el entero recibido al Enum EstadoLibro)
         if (estado.HasValue)
-        {
-            EstadoLibro estadoEnum = (EstadoLibro)estado.Value;
-            query = query.Where(l => l.Estado == estadoEnum);
-        }
+            {
+                query = query.Where(l => (int)l.Estado == estado.Value);
+            }
 
         // 5. Contar el total de registros filtrados antes de la paginación
         int totalCount = await query.CountAsync();

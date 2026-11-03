@@ -1,275 +1,400 @@
-@model IEnumerable<ecommerce_libro_ulp_backend.Models.Libro>
+
+@using ecommerce_libro_ulp_backend.Models
 
 @{
     ViewData["Title"] = "Catálogo de Libros";
 }
 
 <div id="app" class="container mt-4 mb-5">
-    <!-- Encabezado y Botón de Creación -->
+
+    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
                     <li class="breadcrumb-item"><a href="/">Inicio</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Catálogo</li>
+                    <li class="breadcrumb-item active">Catálogo</li>
                 </ol>
             </nav>
+
             <h2 class="fw-bold text-primary">
                 <i class="bi bi-grid-fill"></i> Catálogo de Libros
             </h2>
         </div>
-        
-        <!-- Opcional: Podrías proteger esto para que solo los Admin vean el botón de crear -->
-        @if (User.IsInRole("ADMIN"))
-        {
-            <a asp-action="Crear" class="btn btn-primary shadow-sm">
-                <i class="bi bi-plus-circle"></i> Nuevo Libro
-            </a>
-        }
+
+        <a v-if="esAdmin"
+           asp-action="Crear"
+           class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle"></i> Nuevo Libro
+        </a>
     </div>
 
-    @if (TempData["Mensaje"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm"
-                role="alert">
-            <i class="bi bi-check-circle me-2"></i>
-            @TempData["Mensaje"]
+    <!-- Notificaciones Bootstrap -->
+    <div v-if="notificacion.mensaje"
+         class="alert alert-dismissible fade show shadow-sm"
+         :class="'alert-' + notificacion.tipo"
+         role="alert">
+        {{ notificacion.mensaje }}
+        <button type="button"
+                class="btn-close"
+                @@click="notificacion.mensaje = ''">
+        </button>
+    </div>
 
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
-        </div>
-    }
-
-    <!-- Barra de Filtros Avanzados -->
+    <!-- Filtros -->
     <div class="card shadow-sm mb-4">
         <div class="card-body bg-light rounded">
-            <form asp-action="Index" method="get" class="row g-3 align-items-end">
-                
-                <!-- Input Título -->
-                <div class="col-md-@(User.IsInRole("Admin") ? "3" : "4")">
-                    <label for="titulo" class="form-label fw-semibold small text-secondary">Título</label>
-                    <input type="text" 
-                           id="titulo" 
-                           name="titulo" 
-                           value="@ViewBag.Titulo" 
-                           class="form-control" 
+            <form @@submit.prevent="buscar" class="row g-3 align-items-end">
+
+                <div :class="esAdmin ? 'col-md-3' : 'col-md-4'">
+                    <label class="form-label fw-semibold small text-secondary">
+                        Título
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           v-model.trim="filtros.titulo"
                            placeholder="Filtrar por título..." />
                 </div>
 
-                <!-- Input Autor -->
-                <div class="col-md-@(User.IsInRole("Admin") ? "3" : "3")">
-                    <label for="autor" class="form-label fw-semibold small text-secondary">Autor</label>
-                    <input type="text" 
-                           id="autor" 
-                           name="autor" 
-                           value="@ViewBag.Autor" 
-                           class="form-control" 
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small text-secondary">
+                        Autor
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           v-model.trim="filtros.autor"
                            placeholder="Filtrar por autor..." />
                 </div>
 
-                <!-- Input ISBN -->
-                <div class="col-md-@(User.IsInRole("Admin") ? "2" : "3")">
-                    <label for="isbn" class="form-label fw-semibold small text-secondary">ISBN</label>
-                    <input type="text" 
-                           id="isbn" 
-                           name="isbn" 
-                           value="@ViewBag.Isbn" 
-                           class="form-control" 
+                <div :class="esAdmin ? 'col-md-2' : 'col-md-3'">
+                    <label class="form-label fw-semibold small text-secondary">
+                        ISBN
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           v-model.trim="filtros.isbn"
                            placeholder="Filtrar por ISBN..." />
                 </div>
 
-                <!-- FILTRO DE ESTADO (SOLO PARA ADMINS) -->
-                @if (User.IsInRole("ADMIN"))
-                {
-                    <div class="col-md-2">
-                        <label for="estado" class="form-label fw-semibold small text-secondary">Estado</label>
-                        <select id="estado" name="estado" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="0" selected="@(ViewBag.Estado?.ToString() == "0")">Disponible</option>
-                            <option value="1" selected="@(ViewBag.Estado?.ToString() == "1")">Agotado</option>
-                            <option value="2" selected="@(ViewBag.Estado?.ToString() == "2")">Inactivo</option>
-                        </select>
-                    </div>
-                }
+                <div v-if="esAdmin" class="col-md-2">
+                    <label class="form-label fw-semibold small text-secondary">
+                        Estado
+                    </label>
+                    <select class="form-select" v-model="filtros.estado">
+                        <option value="">Todos</option>
+                        <option value="0">Disponible</option>
+                        <option value="1">Agotado</option>
+                        <option value="2">Inactivo</option>
+                    </select>
+                </div>
 
-                <!-- Botones de Acción -->
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 fw-semibold" title="Buscar">
+                    <button type="submit"
+                            class="btn btn-primary w-100"
+                            title="Buscar"
+                            :disabled="cargando">
                         <i class="bi bi-search"></i>
                     </button>
-                    <a asp-action="Index" class="btn btn-outline-secondary" title="Limpiar filtros">
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            title="Limpiar filtros"
+                            @@click="limpiarFiltros">
                         <i class="bi bi-arrow-counterclockwise"></i>
-                    </a>
+                    </button>
                 </div>
+
             </form>
         </div>
     </div>
 
-    <!-- Mensaje si no hay resultados -->
-    @if (!Model.Any())
-    {
-        <div class="text-center py-5">
-            <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
-            <h4 class="text-secondary">No se encontraron libros</h4>
-            <p class="text-muted">Prueba cambiando los términos de búsqueda o limpia los filtros.</p>
-            <a asp-action="Index" class="btn btn-outline-primary mt-2">Ver todo el catálogo</a>
-        </div>
-    }
-    else
-    {
-        <!-- Grilla de Productos (Tarjetas Estilo E-Commerce) -->
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var libro in Model)
-            {
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 position-relative hover-card">
-                        
-                        <!-- Badge de Estado (Visible para todos o según prefieras) -->
-                        <div class="position-absolute top-0 end-0 m-2 z-index-1">
-                            @if (libro.Estado == EstadoLibro.DISPONIBLE)
-                            {
-                                <span class="badge bg-success shadow-sm">Disponible</span>
-                            }
-                            else if (libro.Estado == EstadoLibro.AGOTADO)
-                            {
-                                <span class="badge bg-warning text-dark shadow-sm">Agotado</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger shadow-sm">Inactivo</span>
-                            }
+    <!-- Cargando -->
+    <div v-if="cargando" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-2">Cargando catálogo...</p>
+    </div>
+
+    <!-- Sin resultados -->
+    <div v-else-if="libros.length === 0" class="text-center py-5">
+        <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
+        <h4 class="text-secondary">No se encontraron libros</h4>
+        <p class="text-muted">
+            Prueba cambiando los términos de búsqueda o limpia los filtros.
+        </p>
+
+        <button class="btn btn-outline-primary mt-2"
+                @@click="limpiarFiltros">
+            Ver todo el catálogo
+        </button>
+    </div>
+
+    <!-- Tarjetas -->
+    <div v-else
+         class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+
+        <div class="col" v-for="libro in libros" :key="libro.id">
+            <div class="card h-100 shadow-sm border-0 position-relative hover-card">
+
+                <!-- Estado -->
+                <div class="position-absolute top-0 end-0 m-2 z-index-1">
+                    <span v-if="libro.estado === 0"
+                          class="badge bg-success shadow-sm">
+                        Disponible
+                    </span>
+
+                    <span v-else-if="libro.estado === 1"
+                          class="badge bg-warning text-dark shadow-sm">
+                        Agotado
+                    </span>
+
+                    <span v-else
+                          class="badge bg-danger shadow-sm">
+                        Inactivo
+                    </span>
+                </div>
+
+                <!-- Imagen -->
+                <div class="bg-light text-center overflow-hidden position-relative"
+                     style="height: 220px;">
+                    <img :src="libro.imagen"
+                         class="w-100 h-100 object-fit-contain p-2"
+                         alt="Portada del libro"
+                         @@error="imagenFallback" />
+                </div>
+
+                <!-- Información -->
+                <div class="card-body d-flex flex-column">
+
+                    <h5 class="card-title fw-bold text-dark text-truncate mb-1"
+                        :title="libro.titulo">
+                        {{ libro.titulo }}
+                    </h5>
+
+                    <p class="card-subtitle text-muted small mb-2 text-truncate">
+                        <i class="bi bi-pen"></i> {{ libro.autor }}
+                    </p>
+
+                    <small v-if="libro.isbn13" class="text-muted mb-2">
+                        <span class="badge bg-light text-dark border">
+                            ISBN: {{ libro.isbn13 }}
+                        </span>
+                    </small>
+
+                    <div class="mt-auto">
+                        <div class="fs-4 fw-bold text-success mb-1">
+                            $ {{ Number(libro.precio).toLocaleString('es-AR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }) }}
                         </div>
 
-                        <!-- Imagen del Libro -->
-                        <div class="bg-light text-center overflow-hidden position-relative" style="height: 220px;">
-                            @{
-                                string imgPath = "/images/book.svg";
-                                if (libro.Imagenes != null && libro.Imagenes.Any())
-                                {
-                                    var principal = libro.Imagenes.FirstOrDefault(img => img.EsPrincipal) ?? libro.Imagenes.First();
-                                    imgPath = principal.Path;
-                                }
-                            }
-                            <img src="@imgPath" 
-                                 class="w-100 h-100 object-fit-contain p-2" 
-                                 alt="Portada del libro" 
-                                 onerror="this.src='/images/book.svg'" />
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold text-dark text-truncate mb-1" title="@libro.Titulo">
-                                @libro.Titulo
-                            </h5>
-                            <p class="card-subtitle text-muted small mb-2 text-truncate">
-                                <i class="bi bi-pen"></i> @libro.Autor
-                            </p>
-
-                            @if (!string.IsNullOrEmpty(libro.Isbn13))
-                            {
-                                <small class="text-muted mb-2">
-                                    <span class="badge bg-light text-dark border">ISBN: @libro.Isbn13</span>
-                                </small>
-                            }
-
-                            <div class="mt-auto">
-                                <div class="fs-4 fw-bold text-success mb-1">
-                                    $ @libro.Precio.ToString("N2")
-                                </div>
-                                <div class="small mb-3">
-                                    <span class="@(libro.Stock > 0 ? "text-info fw-semibold" : "text-muted")">
-                                        <i class="bi bi-boxes"></i> @libro.Stock disponibles
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Botones de Acción -->
-                            <div class="btn-group w-100" role="group">
-                                <a asp-action="Details" asp-route-id="@libro.Id" class="btn btn-outline-info btn-sm" title="Ver Detalles">
-                                    <i class="bi bi-eye"></i> Ver
-                                </a>
-                                
-                                @if (User.IsInRole("ADMIN"))
-                                {
-                                    <a asp-action="Editar" asp-route-id="@libro.Id" class="btn btn-outline-primary btn-sm" title="Editar">
-                                        <i class="bi bi-pencil-square"></i> Editar
-                                    </a>
-                                    <a asp-action="Eliminar" asp-route-id="@libro.Id" class="btn btn-outline-danger btn-sm" title="Dar de baja">
-                                        <i class="bi bi-trash"></i> Baja
-                                    </a>
-                                }
-                            </div>
+                        <div class="small mb-3">
+                            <span :class="libro.stock > 0
+                                ? 'text-info fw-semibold'
+                                : 'text-muted'">
+                                <i class="bi bi-boxes"></i>
+                                {{ libro.stock }} disponibles
+                            </span>
                         </div>
                     </div>
+
+                    <!-- Acciones -->
+                    <div class="btn-group w-100" role="group">
+
+                        <a :href="urlDetails + '/' + libro.id"
+                           class="btn btn-outline-info btn-sm"
+                           title="Ver detalles">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+
+                        <template v-if="esAdmin">
+                            <a :href="urlEditar + '/' + libro.id"
+                               class="btn btn-outline-primary btn-sm"
+                               title="Editar">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+
+                            <a v-if="libro.estado !== 2"
+                                :href="urlEliminar + '/' + libro.id"
+                                class="btn btn-outline-danger btn-sm"
+                                title="Dar de baja">
+                                    <i class="bi bi-trash"></i> Baja
+                                </a>
+                        </template>
+
+                    </div>
                 </div>
-            }
-        </div>
-
-        <!-- Paginación Servidor con conservación de filtros -->
-        @if (ViewBag.TotalPages > 1)
-        {
-            <div class="card bg-white shadow-sm mt-4 p-3 d-flex flex-row justify-content-between align-items-center">
-                <span class="text-muted small">
-                    Mostrando página <strong>@ViewBag.CurrentPage</strong> de @ViewBag.TotalPages (@ViewBag.TotalRegistros libros en total)
-                </span>
-                <nav aria-label="Paginación de libros">
-                    <ul class="pagination pagination-sm mb-0">
-                        
-                        <!-- Botón Anterior -->
-                        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                            <a class="page-link" asp-action="Index" 
-                               asp-route-page="@(ViewBag.CurrentPage - 1)" 
-                               asp-route-titulo="@ViewBag.Titulo"
-                               asp-route-autor="@ViewBag.Autor"
-                               asp-route-isbn="@ViewBag.Isbn"
-                               asp-route-estado="@ViewBag.Estado">Anterior</a>
-                        </li>
-
-                        <!-- Números de Página -->
-                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
-                        {
-                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                                <a class="page-link" asp-action="Index" 
-                                   asp-route-page="@i" 
-                                   asp-route-titulo="@ViewBag.Titulo"
-                                   asp-route-autor="@ViewBag.Autor"
-                                   asp-route-isbn="@ViewBag.Isbn"
-                                   asp-route-estado="@ViewBag.Estado">@i</a>
-                            </li>
-                        }
-
-                        <!-- Botón Siguiente -->
-                        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-                            <a class="page-link" asp-action="Index" 
-                               asp-route-page="@(ViewBag.CurrentPage + 1)" 
-                               asp-route-titulo="@ViewBag.Titulo"
-                               asp-route-autor="@ViewBag.Autor"
-                               asp-route-isbn="@ViewBag.Isbn"
-                               asp-route-estado="@ViewBag.Estado">Siguiente</a>
-                        </li>
-
-                    </ul>
-                </nav>
             </div>
-        }
-    }
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    <div v-if="!cargando && totalPages > 1"
+         class="card bg-white shadow-sm mt-4 p-3 d-flex flex-row justify-content-between align-items-center">
+
+        <span class="text-muted small">
+            Mostrando página <strong>{{ currentPage }}</strong>
+            de {{ totalPages }} ({{ totalCount }} libros en total)
+        </span>
+
+        <nav aria-label="Paginación de libros">
+            <ul class="pagination pagination-sm mb-0">
+
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button class="page-link"
+                            :disabled="currentPage === 1"
+                            @@click="cambiarPagina(currentPage - 1)">
+                        Anterior
+                    </button>
+                </li>
+
+                <li v-for="pagina in totalPages"
+                    :key="pagina"
+                    class="page-item"
+                    :class="{ active: pagina === currentPage }">
+                    <button class="page-link"
+                            @@click="cambiarPagina(pagina)">
+                        {{ pagina }}
+                    </button>
+                </li>
+
+                <li class="page-item"
+                    :class="{ disabled: currentPage === totalPages }">
+                    <button class="page-link"
+                            :disabled="currentPage === totalPages"
+                            @@click="cambiarPagina(currentPage + 1)">
+                        Siguiente
+                    </button>
+                </li>
+
+            </ul>
+        </nav>
+    </div>
+
 </div>
 
 <style>
     .hover-card {
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
+
     .hover-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
     }
 </style>
 
 <script>
     const { createApp } = Vue;
+
     createApp({
-        data() { return {} }
+        data() {
+            return {
+                libros: [],
+                cargando: false,
+                esAdmin: false,
+
+                filtros: {
+                    titulo: '',
+                    autor: '',
+                    isbn: '',
+                    estado: ''
+                },
+
+                currentPage: 1,
+                totalPages: 0,
+                totalCount: 0,
+
+                notificacion: {
+                    mensaje: '',
+                    tipo: 'success'
+                },
+
+                urlListar: '@Url.Action("Listar", "Libros")',
+                urlDetails: '@Url.Action("Details", "Libros")',
+                urlEditar: '@Url.Action("Editar", "Libros")',
+                urlEliminar: '@Url.Action("Eliminar", "Libros")',
+                mensajeInicial: @Json.Serialize(TempData["Mensaje"]?.ToString() ?? ""),
+                tipoMensajeInicial: @Json.Serialize(TempData["TipoMensaje"]?.ToString() ?? "success")
+            };
+        },
+
+        methods: {
+            async cargarLibros() {
+                this.cargando = true;
+
+                try {
+                    const params = new URLSearchParams({
+                        titulo: this.filtros.titulo,
+                        autor: this.filtros.autor,
+                        isbn: this.filtros.isbn,
+                        estado: this.filtros.estado,
+                        page: this.currentPage
+                    });
+
+                    const response = await fetch(`${this.urlListar}?${params}`);
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'No se pudo cargar el catálogo.');
+                    }
+
+                    this.libros = data.items;
+                    this.totalCount = data.totalCount;
+                    this.totalPages = data.totalPages;
+                    this.currentPage = data.currentPage;
+                    this.esAdmin = data.esAdmin;
+
+                } catch (error) {
+                    this.mostrarNotificacion(error.message, 'danger');
+                } finally {
+                    this.cargando = false;
+                }
+            },
+
+            buscar() {
+                this.currentPage = 1;
+                this.cargarLibros();
+            },
+
+            limpiarFiltros() {
+                this.filtros = {
+                    titulo: '',
+                    autor: '',
+                    isbn: '',
+                    estado: ''
+                };
+
+                this.currentPage = 1;
+                this.cargarLibros();
+            },
+
+            cambiarPagina(pagina) {
+                if (pagina < 1 || pagina > this.totalPages) return;
+
+                this.currentPage = pagina;
+                this.cargarLibros();
+            },
+
+            mostrarNotificacion(mensaje, tipo = 'success') {
+                this.notificacion = { mensaje, tipo };
+            },
+
+            imagenFallback(event) {
+                event.target.src = '/images/book.svg';
+            }
+        },
+
+        mounted() {
+            if (this.mensajeInicial) {
+                this.mostrarNotificacion(
+                    this.mensajeInicial,
+                    this.tipoMensajeInicial
+                );
+            }
+
+            this.cargarLibros();
+        }
     }).mount('#app');
 </script>

@@ -231,5 +231,40 @@ namespace ecommerce_libro_ulp_backend.Controllers
                 return View("Error");
             }
         }
+
+        // GET: Carritos/Buscar?titulo=...
+        [HttpGet]
+        public async Task<IActionResult> Buscar(string? titulo)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var carritos = string.IsNullOrWhiteSpace(titulo)
+                    ? await _carritoRepository.ObtenerPorUsuarioId(usuarioId)
+                    : await _carritoRepository.BuscarPorUsuarioYTitulo(usuarioId, titulo.Trim());
+
+                var resultado = carritos
+                    .Where(c => c.Libro != null)
+                    .Select(c => new
+                    {
+                        id = c.Id,
+                        libroId = c.LibroId,
+                        titulo = c.Libro!.Titulo,
+                        cantidad = c.Cantidad,
+                        fechaAgregado = c.FechaAgregado?.ToString("dd/MM/yyyy")
+                    });
+
+                return Json(resultado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar libros del carrito.");
+                return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda." });
+            }
+        }
     }
 }

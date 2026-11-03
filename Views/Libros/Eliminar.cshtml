@@ -4,55 +4,181 @@
     ViewData["Title"] = "Dar de baja libro";
 }
 
-<div class="container mt-4 mb-5">
+<div id="app" class="container mt-4 mb-5">
+
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb mb-1">
             <li class="breadcrumb-item"><a href="/">Inicio</a></li>
-            <li class="breadcrumb-item"><a asp-action="Index">Catálogo</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Baja de Libro</li>
+            <li class="breadcrumb-item">
+                <a asp-action="Index">Catálogo</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Baja de Libro
+            </li>
         </ol>
     </nav>
 
     <div class="card shadow-sm border-0 p-4">
-        <div class="alert alert-warning" role="alert">
-            <h4 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> ¿Estás seguro de que deseas dar de baja este libro?</h4>
-            <p class="mb-0">Esta acción cambiará el estado del libro a eliminado/inactivo y dejará de estar visible en el catálogo principal para los compradores.</p>
+
+        <!-- Notificaciones -->
+        <div v-if="notificacion.mensaje"
+             class="alert mb-3"
+             :class="'alert-' + notificacion.tipo"
+             role="alert">
+            {{ notificacion.mensaje }}
         </div>
 
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading fw-bold">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                ¿Estás seguro de que deseas dar de baja este libro?
+            </h4>
+
+            <p class="mb-0">
+                Esta acción cambiará el estado del libro a inactivo
+                y dejará de estar visible en el catálogo principal
+                para los compradores.
+            </p>
+        </div>
+
+        <!-- Detalles del libro -->
         <div class="row g-4 mt-2">
-            <!-- Detalles del libro a dar de baja -->
             <div class="col-md-6">
                 <dl class="row">
+
                     <dt class="col-sm-4 text-muted">Título:</dt>
-                    <dd class="col-sm-8 fw-bold text-dark">@Model.Titulo</dd>
+                    <dd class="col-sm-8 fw-bold text-dark">
+                        @Model.Titulo
+                    </dd>
 
                     <dt class="col-sm-4 text-muted">Autor:</dt>
-                    <dd class="col-sm-8">@Model.Autor</dd>
+                    <dd class="col-sm-8">
+                        @Model.Autor
+                    </dd>
 
                     <dt class="col-sm-4 text-muted">ISBN13:</dt>
-                    <dd class="col-sm-8">@(Model.Isbn13 ?? "No especificado")</dd>
+                    <dd class="col-sm-8">
+                        @(Model.Isbn13 ?? "No especificado")
+                    </dd>
 
                     <dt class="col-sm-4 text-muted">Precio:</dt>
-                    <dd class="col-sm-8 text-success fw-bold">$@Model.Precio.ToString("N2")</dd>
+                    <dd class="col-sm-8 text-success fw-bold">
+                        $@Model.Precio.ToString("N2")
+                    </dd>
 
                     <dt class="col-sm-4 text-muted">Stock actual:</dt>
-                    <dd class="col-sm-8">@Model.Stock unidades</dd>
+                    <dd class="col-sm-8">
+                        @Model.Stock unidades
+                    </dd>
+
                 </dl>
             </div>
         </div>
 
-        <!-- Formulario que ejecuta la baja lógica (POST) -->
-        <form asp-action="Eliminar" method="post" class="mt-4 pt-3 border-top d-flex gap-2">
-            <!-- Enviamos el Id oculto para identificar el registro -->
+        <!-- Confirmación de baja -->
+        <form asp-action="Eliminar"
+              method="post"
+              ref="formulario"
+              @@submit.prevent="confirmarEliminacion"
+              class="mt-4 pt-3 border-top d-flex gap-2">
+
+            @Html.AntiForgeryToken()
+
             <input type="hidden" asp-for="Id" />
 
-            <button type="submit" class="btn btn-danger px-4 fw-bold">
-                <i class="bi bi-trash-fill"></i> Sí, dar de baja
+            <button type="submit"
+                    class="btn btn-danger px-4 fw-bold"
+                    :disabled="eliminando">
+
+                <span v-if="eliminando">
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Procesando...
+                </span>
+
+                <span v-else>
+                    <i class="bi bi-trash-fill"></i>
+                    Sí, dar de baja
+                </span>
+
             </button>
-            <a asp-action="Index" class="btn btn-outline-secondary px-4">
-                <i class="bi bi-arrow-left"></i> Cancelar
+
+            <a asp-action="Index"
+               class="btn btn-outline-secondary px-4"
+               :class="{ 'disabled': eliminando }">
+
+                <i class="bi bi-arrow-left"></i>
+                Cancelar
             </a>
+
         </form>
+
     </div>
 </div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                eliminando: false,
+
+                notificacion: {
+                    mensaje: '',
+                    tipo: 'info'
+                }
+            };
+        },
+
+        methods: {
+            async confirmarEliminacion() {
+                if (this.eliminando) return;
+
+                const formulario = this.$refs.formulario;
+
+                this.eliminando = true;
+                this.notificacion.mensaje = '';
+
+                try {
+                    const formData = new FormData(formulario);
+
+                    const response = await fetch(formulario.action, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(
+                            data.message || 'No se pudo dar de baja el libro.'
+                        );
+                    }
+
+                    // Redirigimos al listado después de confirmar la baja.
+                    window.location.href = data.redirectUrl;
+
+                } catch (error) {
+                    this.notificacion = {
+                        mensaje: error.message ||
+                            'Ocurrió un error al dar de baja el libro.',
+                        tipo: 'danger'
+                    };
+
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+
+                } finally {
+                    this.eliminando = false;
+                }
+            }
+        }
+    }).mount('#app');
+</script> 

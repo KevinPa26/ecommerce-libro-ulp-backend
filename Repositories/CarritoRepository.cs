@@ -55,4 +55,16 @@ public class CarritoRepository : ICarritoRepository
 	{
 		return await ObtenerPorUsuarioId(usuario.Id);
 	}
+
+	public async Task<List<Carrito>> BuscarPorUsuarioYTitulo(int usuarioId, string titulo)
+	{
+		return await _context.Carritos
+			.AsNoTracking()
+			.Where(c => c.UsuarioId == usuarioId &&
+						c.Libro != null &&
+						c.Libro.Titulo.Contains(titulo))
+			.Include(c => c.Libro)
+			.OrderBy(c => c.Libro!.Titulo)
+			.ToListAsync();
+	}
 }

@@ -23,30 +23,84 @@ namespace ecommerce_libro_ulp_backend.Controllers
         }
 
         // GET: Libros
-        public async Task<IActionResult> Index(string? titulo, string? autor, string? isbn, int? estado, int page = 1)
+        [HttpGet]
+        public IActionResult Index()
         {
-            int pageSizeReal = 8; // Múltiplo de 4 para que encaje perfecto en la grilla de tarjetas
+            return View();
+        }
 
-            if (!User.IsInRole("ADMIN"))
+        [HttpGet]
+        public async Task<IActionResult> Listar(
+            string? titulo,
+            string? autor,
+            string? isbn,
+            int? estado,
+            int page = 1)
+        {
+            try
             {
-                estado = 0; 
+                const int pageSize = 8;
+
+                if (page < 1)
+                    page = 1;
+
+                
+                // Obtener libros filtrados y paginados.
+                var resultado = await _libroRepository.ObtenerTodos(
+                    titulo,
+                    autor,
+                    isbn,
+                    estado,
+                    page,
+                    pageSize
+                );
+
+                // Convertimos las entidades a datos para Vue.
+                var libros = resultado.Items.Select(libro =>
+                {
+                    var imagenPrincipal = libro.Imagenes?
+                        .FirstOrDefault(img => img.EsPrincipal)
+                        ?? libro.Imagenes?.FirstOrDefault();
+
+                    return new
+                    {
+                        id = libro.Id,
+                        titulo = libro.Titulo,
+                        autor = libro.Autor,
+                        isbn13 = libro.Isbn13,
+                        precio = libro.Precio,
+                        stock = libro.Stock,
+                        estado = (int)libro.Estado,
+
+                        imagen = imagenPrincipal?.Path ?? "/images/book.svg"
+                    };
+                }).ToList();
+
+                int totalPages = (int)Math.Ceiling(
+                    (double)resultado.TotalCount / pageSize
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    items = libros,
+                    totalCount = resultado.TotalCount,
+                    currentPage = page,
+                    totalPages,
+                    pageSize,
+                    esAdmin = User.IsInRole("ADMIN")
+                });
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al listar libros.");
 
-            var resultado = await _libroRepository.ObtenerTodos(
-                titulo, autor, isbn, estado, page, pageSizeReal
-            );
-
-            int totalPages = (int)Math.Ceiling(resultado.TotalCount / (double)pageSizeReal);
-
-            ViewBag.Titulo = titulo;
-            ViewBag.Autor = autor;
-            ViewBag.Isbn = isbn;
-            ViewBag.Estado = estado;
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages == 0 ? 1 : totalPages;
-            ViewBag.TotalRegistros = resultado.TotalCount;
-
-            return View(resultado.Items);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocurrió un error al cargar el catálogo."
+                });
+            }
         }
 
         // GET: Libros/Details/5
@@ -92,78 +146,134 @@ namespace ecommerce_libro_ulp_backend.Controllers
         // POST: Libros/Crear
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(Libro libro, List<IFormFile> archivosFotos)
+        public async Task<IActionResult> Crear(
+            Libro libro,
+            List<IFormFile>? archivosFotos)
         {
-            // 1. Obtener el ID del usuario logueado actual desde los claims
-            var estaAutenticado = User.Identity?.IsAuthenticated;
-            var tipoAutenticacion = User.Identity?.AuthenticationType;
-            var usuarioIdString = User.FindFirstValue(
-                ClaimTypes.NameIdentifier
-            );
-            
-            if (int.TryParse(usuarioIdString, out int vendedorIdLogueado))
+            try
             {
-                libro.VendedorId = vendedorIdLogueado;
-                libro.UsuarioCreador = vendedorIdLogueado;
-                libro.Estado = EstadoLibro.DISPONIBLE;
-            }
-            else
-            {
-                // Si no hay sesión válida, redirigir al login o devolver error de autenticación
-                return Challenge(); 
-            }
+                // 1. Obtener el usuario autenticado.
+                var usuarioIdClaim = User.FindFirst(
+                    System.Security.Claims.ClaimTypes.NameIdentifier
+                )?.Value;
 
-            // 2. Validar la cantidad de fotos (Mínimo 1, Máximo 4)
-            if (archivosFotos == null || archivosFotos.Count < 1 || archivosFotos.Count > 4)
-            {
-                ModelState.AddModelError("", "Debes subir obligatoriamente entre 1 y 4 fotografías del libro.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                if (!int.TryParse(usuarioIdClaim, out int usuarioId))
                 {
-                    // 3. Guardar el libro primero en el repositorio para que se genere su ID
-                    await _libroRepository.Crear(libro); 
-                    // Nota: Asegúrate de que tu método CrearAsync en el repositorio asigne el ID al objeto `libro` (o guarde los cambios y devuelva el objeto con el ID poblado).
-
-                    // 4. Procesar y guardar las imágenes asociadas
-                    for (int i = 0; i < archivosFotos!.Count; i++) // ! -> ModelState.IsValid daria falso si archivosFotos fuese nulo, ver paso (2)
+                    return Unauthorized(new
                     {
-                        var archivo = archivosFotos[i];
-                        if (archivo != null && archivo.Length > 0)
-                        {
-                            // Llamamos a tu método auxiliar para guardar el archivo en disco (ej: wwwroot/uploads/libros/)
-                            // y que te devuelva la ruta relativa (ej: "/uploads/libros/1/foto_abc.jpg")
-                            var rutaRelativa = await GuardarArchivoLibroAsync(archivo, libro.Id);
-
-                            var imagenLibro = new ImagenLibro
-                            {
-                                LibroId = libro.Id,
-                                Path = rutaRelativa,
-                                // LA MAGIA AQUí: La primera imagen (índice 0) es la principal
-                                EsPrincipal = (i == 0) 
-                            };
-
-                            // Guardamos la imagen en la base de datos a través de su respectivo repositorio o contexto
-                            await _imagenLibroRepository.Crear(imagenLibro);
-                        }
-                    }
-
-                    TempData["Mensaje"] = "El libro fue creado correctamente.";
-                    _logger.LogInformation("Libro con ID {Id} creado exitosamente con {Count} imágenes.", libro.Id, archivosFotos.Count);
-                    return RedirectToAction(nameof(Index));
+                        success = false,
+                        message = "Debes iniciar sesión para registrar un libro."
+                    });
                 }
-                catch (Exception ex)
+
+                // 2. Asignar datos que controla el backend.
+                libro.VendedorId = usuarioId;
+                libro.UsuarioCreador = usuarioId;
+                libro.Estado = EstadoLibro.DISPONIBLE;
+
+                // 3. Validar cantidad de fotografías.
+                archivosFotos = (archivosFotos ?? new List<IFormFile>())
+                    .Where(a => a != null && a.Length > 0)
+                    .ToList();
+
+                // Los archivos se validan manualmente, no mediante ModelState.
+                foreach (var key in ModelState.Keys
+                    .Where(k => k.StartsWith("archivosFotos",
+                        StringComparison.OrdinalIgnoreCase))
+                    .ToList())
                 {
-                    _logger.LogError(ex, "Error al crear el libro y sus imágenes asociadas.");
-                    ModelState.AddModelError("", "Ocurrió un error inesperado al intentar registrar el libro.");
+                    ModelState.Remove(key);
                 }
-            }
 
-            // Si el ModelState falla o hay excepciones, recargamos la vista con el modelo actual
-            return View(libro);
+                if (archivosFotos.Count < 1)
+                {
+                    ModelState.AddModelError(
+                        "Fotos",
+                        "Debes seleccionar al menos una fotografía."
+                    );
+                }
+                else if (archivosFotos.Count > 4)
+                {
+                    ModelState.AddModelError(
+                        "Fotos",
+                        "Solo puedes seleccionar un máximo de 4 fotografías."
+                    );
+                }
+
+                // 4. Validar el modelo en el servidor.
+                TryValidateModel(libro);
+
+                if (!ModelState.IsValid)
+                {
+                    var errores = ModelState
+                        .Where(e => e.Value?.Errors.Count > 0)
+                        .SelectMany(e => e.Value!.Errors)
+                        .Select(e => !string.IsNullOrWhiteSpace(e.ErrorMessage)
+                            ? e.ErrorMessage
+                            : "Uno de los datos ingresados no es válido.")
+                        .Distinct()
+                        .ToList();
+
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = string.Join(" ", errores),
+                        errors = errores
+                    });
+                }
+
+                // 5. Registrar el libro.
+                await _libroRepository.Crear(libro);
+
+                // 6. Guardar fotografías.
+                for (int i = 0; i < archivosFotos.Count; i++)
+                {
+                    var archivo = archivosFotos[i];
+
+                    var ruta = await GuardarArchivoLibroAsync(
+                        archivo,
+                        libro.Id
+                    );
+
+                    var imagen = new ImagenLibro
+                    {
+                        LibroId = libro.Id,
+                        Path = ruta,
+                        EsPrincipal = i == 0
+                    };
+
+                    await _imagenLibroRepository.Crear(imagen);
+                }
+
+                _logger.LogInformation(
+                    "Libro {LibroId} registrado correctamente por el usuario {UsuarioId}.",
+                    libro.Id,
+                    usuarioId
+                );
+
+                // 7. Respuesta JSON.
+                return Ok(new
+                {
+                    success = true,
+                    message = "El libro se registró correctamente.",
+                    libroId = libro.Id
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al registrar el libro."
+                );
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocurrió un error al registrar el libro. Inténtalo nuevamente."
+                });
+            }
         }
+
 
         // GET: Libros/Editar/5
         public async Task<IActionResult> Editar(int id)
@@ -177,117 +287,239 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return View(libro);
         }
 
+        
         // POST: Libros/Editar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(int id, Libro libroConCambios, List<IFormFile> archivosFotos, List<int> imagenesAEliminar)
+        public async Task<IActionResult> Editar(
+            int id,
+            Libro libroConCambios,
+            List<IFormFile>? archivosFotos,
+            List<string>? imagenesAEliminar)
         {
+            // 1. Validar coincidencia de IDs.
             if (id != libroConCambios.Id)
             {
-                return NotFound();
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "El identificador del libro no es válido."
+                });
             }
 
-            // 1. Obtener el ID del usuario logueado actual desde los claims (por seguridad)
+            // 2. Obtener el usuario logueado.
             var usuarioIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             if (!int.TryParse(usuarioIdString, out int vendedorIdLogueado))
             {
-                return Challenge();
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Debes iniciar sesión para realizar esta operación."
+                });
             }
 
-            // 2. RECUPERAR EL LIBRO ORIGINAL DE LA BASE DE DATOS
-            // Esto es vital para asegurar que ISBN, Título y Autor NO se alteren maliciosamente
-            var libroOriginal = await _libroRepository.ObtenerPorId(id); // Asegúrate de incluir las imágenes en esta consulta
+            // 3. Validar permisos.
+            if (!User.IsInRole("ADMIN"))
+            {
+                return StatusCode(403, new
+                {
+                    success = false,
+                    message = "No tienes permisos para editar este libro."
+                });
+            }
+
+            // 4. Recuperar el libro original con sus imágenes.
+            var libroOriginal = await _libroRepository.ObtenerPorId(id);
+
             if (libroOriginal == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    success = false,
+                    message = "No se encontró el libro solicitado."
+                });
+            }
+            
+            // 5. Obtener imágenes actuales.
+            var imagenesActualesBD = libroOriginal.Imagenes
+                ?? new List<ImagenLibro>();
+
+            // Normalizar archivos: descartar entradas vacías.
+            archivosFotos = (archivosFotos ?? new List<IFormFile>())
+                .Where(a => a != null && a.Length > 0)
+                .ToList();
+
+            // Convertir los IDs recibidos, ignorando valores vacíos o inválidos.
+            var idsSolicitados = (imagenesAEliminar ?? new List<string>())
+                .Where(valor => !string.IsNullOrWhiteSpace(valor))
+                .Select(valor => int.TryParse(valor, out int imgId) ? imgId : 0)
+                .Where(imgId => imgId > 0)
+                .Distinct()
+                .ToList();
+
+            // Quitar errores de conversión de estos parámetros.
+            // Su contenido ya se normalizó y se valida manualmente.
+            foreach (var key in ModelState.Keys
+                .Where(k =>
+                    k.StartsWith("archivosFotos", StringComparison.OrdinalIgnoreCase) ||
+                    k.StartsWith("imagenesAEliminar", StringComparison.OrdinalIgnoreCase))
+                .ToList())
+            {
+                ModelState.Remove(key);
             }
 
-            if (!User.IsInRole("ADMIN")) return Forbid();
+            // Solo se pueden eliminar imágenes pertenecientes al libro.
+            var idsAEliminarValidos = imagenesActualesBD
+                .Where(img => idsSolicitados.Contains(img.Id))
+                .Select(img => img.Id)
+                .Distinct()
+                .ToList();
 
-            // 3. OBTENER LAS IMÁGENES ACTUALES QUE QUEDAN EN LA BASE DE DATOS
-            var imagenesActualesBD = libroOriginal.Imagenes;
-            
-            // Calcular cuántas imágenes quedarán tras las eliminaciones solicitadas
-            int cantidadDespuesDeEliminar = imagenesActualesBD.Count - (imagenesAEliminar?.Count ?? 0);
-            int cantidadTotalFinal = cantidadDespuesDeEliminar + (archivosFotos?.Count ?? 0);
+            // Calcular el total final.
+            int cantidadDespuesDeEliminar =
+                imagenesActualesBD.Count - idsAEliminarValidos.Count;
 
-            // Validar regla de negocio: Debe tener entre 1 y 4 imágenes en total
+            int cantidadTotalFinal =
+                cantidadDespuesDeEliminar + archivosFotos.Count;
+
+            // Validar regla de negocio.
             if (cantidadTotalFinal < 1 || cantidadTotalFinal > 4)
             {
-                ModelState.AddModelError("", "El libro debe tener obligatoriamente entre 1 y 4 fotografías en total.");
+                ModelState.AddModelError(
+                    "Fotos",
+                    "El libro debe tener obligatoriamente entre 1 y 4 fotografías en total."
+                );
             }
 
-            if (ModelState.IsValid)
+
+            // 7. Validar modelo.
+            if (!ModelState.IsValid)
             {
-                try
+                var errores = ModelState
+                    .Where(e => e.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        e => e.Key,
+                        e => e.Value!.Errors.Select(error =>
+                            !string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                ? error.ErrorMessage
+                                : "El valor ingresado no es válido."
+                        ).ToArray()
+                    );
+
+                return BadRequest(new
                 {
-                    // 4. ACTUALIZAR SOLAMENTE LOS CAMPOS PERMITIDOS EN EL OBJETO ORIGINAL
-                    libroOriginal.Precio = libroConCambios.Precio;
-                    libroOriginal.Stock = libroConCambios.Stock;
-                    libroOriginal.Estado = libroConCambios.Estado;
-                    libroOriginal.DescripcionVendedor = libroConCambios.DescripcionVendedor;
-                    libroOriginal.DescripcionLibro = libroConCambios.DescripcionLibro;
-
-                    // Guardar cambios principales en el repositorio
-                    await _libroRepository.Modificar(libroOriginal);
-
-                    // 5. PROCESAR ELIMINACIÓN DE IMÁGENES SELECCIONADAS
-                    if (imagenesAEliminar != null && imagenesAEliminar.Any())
-                    {
-                        foreach (var imgId in imagenesAEliminar)
-                        {
-                            var imgAEliminar = await _imagenLibroRepository.ObtenerPorId(imgId);
-                            if (imgAEliminar != null && imgAEliminar.LibroId == id)
-                            {
-                                // Opcional: Borrar el archivo físico del disco si usas almacenamiento local
-                                BorrarArchivoFisico(imgAEliminar.Path);
-
-                                await _imagenLibroRepository.Eliminar(imgAEliminar);
-                            }
-                        }
-                    }
-
-                    // 6. PROCESAR Y AGREGAR LAS NUEVAS FOTOGRAFÍAS (SI LAS HAY)
-                    if (archivosFotos != null && archivosFotos.Any())
-                    {
-                        // Volvemos a consultar cuántas imágenes activas quedaron tras el borrado
-                        var imagenesRestantes = await _imagenLibroRepository.ObtenerPorLibro(id);
-                        bool yaTienePrincipal = imagenesRestantes.Any(img => img.EsPrincipal);
-
-                        for (int i = 0; i < archivosFotos.Count; i++)
-                        {
-                            var archivo = archivosFotos[i];
-                            if (archivo != null && archivo.Length > 0)
-                            {
-                                var rutaRelativa = await GuardarArchivoLibroAsync(archivo, id);
-
-                                var nuevaImagen = new ImagenLibro
-                                {
-                                    LibroId = id,
-                                    Path = rutaRelativa,
-                                    // Si ya no quedaban imágenes principales tras los borrados, la primera nueva pasa a ser principal
-                                    EsPrincipal = !yaTienePrincipal && (i == 0)
-                                };
-
-                                await _imagenLibroRepository.Crear(nuevaImagen);
-                            }
-                        }
-                    }
-
-                    _logger.LogInformation("Libro con ID {Id} actualizado exitosamente.", id);
-                    TempData["Mensaje"] = "El libro fue actualizado correctamente.";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al actualizar el libro con ID {Id}.", id);
-                    ModelState.AddModelError("", "Ocurrió un error inesperado al intentar guardar los cambios.");
-                }
+                    success = false,
+                    message = string.Join(" ",
+                        errores.SelectMany(e => e.Value)),
+                    errors = errores
+                });
             }
 
-            // Si falla el ModelState, reasignamos el modelo original completo a la vista para no perder datos de renderizado
-            return View(libroOriginal);
+            try
+            {
+                // 8. Actualizar solamente los campos permitidos.
+                libroOriginal.Precio = libroConCambios.Precio;
+                libroOriginal.Stock = libroConCambios.Stock;
+                libroOriginal.Estado = libroConCambios.Estado;
+                libroOriginal.DescripcionVendedor =
+                    libroConCambios.DescripcionVendedor;
+                libroOriginal.DescripcionLibro =
+                    libroConCambios.DescripcionLibro;
+
+                await _libroRepository.Modificar(libroOriginal);
+
+                // 9. Eliminar imágenes seleccionadas.
+                foreach (var imgId in idsAEliminarValidos)
+                {
+                    var imgAEliminar =
+                        await _imagenLibroRepository.ObtenerPorId(imgId);
+
+                    if (imgAEliminar != null && imgAEliminar.LibroId == id)
+                    {
+                        BorrarArchivoFisico(imgAEliminar.Path);
+
+                        await _imagenLibroRepository.Eliminar(imgAEliminar);
+                    }
+                }
+
+                // 10. Agregar nuevas fotografías.
+                if (archivosFotos.Any())
+                {
+                    var imagenesRestantes =
+                        await _imagenLibroRepository.ObtenerPorLibro(id);
+
+                    bool yaTienePrincipal =
+                        imagenesRestantes.Any(img => img.EsPrincipal);
+
+                    for (int i = 0; i < archivosFotos.Count; i++)
+                    {
+                        var archivo = archivosFotos[i];
+
+                        if (archivo != null && archivo.Length > 0)
+                        {
+                            var rutaRelativa =
+                                await GuardarArchivoLibroAsync(archivo, id);
+
+                            var nuevaImagen = new ImagenLibro
+                            {
+                                LibroId = id,
+                                Path = rutaRelativa,
+                                EsPrincipal = !yaTienePrincipal && i == 0
+                            };
+
+                            await _imagenLibroRepository.Crear(nuevaImagen);
+
+                            // Si esta imagen pasó a ser principal,
+                            // las siguientes ya no deben recibir ese estado.
+                            if (nuevaImagen.EsPrincipal)
+                            {
+                                yaTienePrincipal = true;
+                            }
+                        }
+                    }
+                }
+
+                // 11. Recuperar imágenes actualizadas.
+                var imagenesActualizadas =
+                    await _imagenLibroRepository.ObtenerPorLibro(id);
+
+                _logger.LogInformation(
+                    "Libro con ID {Id} actualizado exitosamente por el usuario {UsuarioId}.",
+                    id,
+                    vendedorIdLogueado
+                );
+
+                // 12. Respuesta JSON.
+                return Ok(new
+                {
+                    success = true,
+                    message = "El libro fue actualizado correctamente.",
+                    libroId = id,
+                    imagenes = imagenesActualizadas.Select(img => new
+                    {
+                        img.Id,
+                        img.Path,
+                        img.EsPrincipal
+                    }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al actualizar el libro con ID {Id}.",
+                    id
+                );
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocurrió un error inesperado al intentar guardar los cambios."
+                });
+            }
         }
+
 
         // GET: Libros/Eliminar/5
         public async Task<IActionResult> Eliminar(int id)
@@ -309,19 +541,45 @@ namespace ecommerce_libro_ulp_backend.Controllers
             try
             {
                 var libro = await _libroRepository.ObtenerPorId(id);
-                if (libro != null)
+
+                if (libro == null)
                 {
-                    await _libroRepository.Eliminar(libro);
-                    _logger.LogInformation("Libro con ID {LibroId} eliminado.", id);
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "No se encontró el libro que desea dar de baja."
+                    });
                 }
 
-                 TempData["Mensaje"] = "El libro fue dado de baja correctamente.";
-                return RedirectToAction(nameof(Index));
+                await _libroRepository.Eliminar(libro);
+
+                _logger.LogInformation(
+                    "Libro con ID {LibroId} dado de baja correctamente.",
+                    id
+                );
+
+                TempData["Mensaje"] = "El libro fue dado de baja correctamente.";
+                TempData["TipoMensaje"] = "success";
+
+                return Ok(new
+                {
+                    success = true,
+                    redirectUrl = Url.Action("Index", "Libros")
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar el libro con ID {LibroId}.", id);
-                return View("Error");
+                _logger.LogError(
+                    ex,
+                    "Error al dar de baja el libro con ID {LibroId}.",
+                    id
+                );
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocurrió un error al intentar dar de baja el libro."
+                });
             }
         }
 

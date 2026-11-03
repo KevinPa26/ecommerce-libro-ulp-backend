@@ -1,32 +1,95 @@
 # ecommerce-libro-ulp-backend
 
-proyecto backend para TUDS-26 Laboratorio de Programación II
+Proyecto backend para TUDS-26 - Laboratorio de Programación II.
 
-- url diagrama ER:
-  https://lucid.app/lucidchart/0c66a41f-50d8-4e97-9b10-7b6bda7d771b/edit?page=0_0&invitationId=inv_d6f15f92-a569-4629-a0b7-1f3a63f70877#
-
-## 📌 Descripción General del Proyecto
-
-Este proyecto es el diseño e implementación de la base de datos relacional para una **plataforma web de comercio electrónico (marketplace) especializada en la compra y venta de libros**.
-
-El sistema cubre todo el ciclo de vida de la interacción de los usuarios en la plataforma: desde el registro y navegación en el catálogo hasta la gestión de favoritos, carritos de compra activos y la posterior facturación e historial de compras.
+- **Diagrama Entidad-Relación (DER):**  
+  [Ver diagrama en Lucidchart](https://lucid.app/lucidchart/0c66a41f-50d8-4e97-9b10-7b6bda7d771b/edit?page=0_0&invitationId=inv_d6f15f92-a569-4629-a0b7-1f3a63f70877#)
 
 ---
 
+## 📌 Descripción General del Proyecto
+
+Este proyecto consiste en el desarrollo de una **plataforma web de comercio electrónico especializada en la compra y venta de libros**.
+
+El sistema permite a los usuarios registrarse, iniciar sesión, consultar un catálogo de libros, gestionar sus favoritos y administrar un carrito de compras. También contempla la gestión de usuarios con distintos roles, perfiles con avatar y el registro de compras con su correspondiente detalle.
+
+La aplicación utiliza una arquitectura basada en ASP.NET Core MVC, una base de datos relacional MySQL/TiDB y una Web API protegida mediante autenticación JWT.
+
 ## 💡 Problema que Resuelve
 
-En las plataformas de comercio electrónico orientadas al sector editorial o marketplaces de libros, es necesario estructurar eficientemente la información para garantizar consistencia, escalabilidad e integridad de los datos. Este modelo resuelve los siguientes desafíos:
+El proyecto busca resolver la necesidad de contar con una plataforma centralizada para administrar la comercialización de libros, organizando tanto la información de los productos como las operaciones realizadas por los usuarios.
 
-1. **Gestión Multivendedor e Inventarios:**
-   - Permite que múltiples usuarios actúen como vendedores manteniendo un registro claro del stock disponible, precios e información bibliográfica normalizada (ISBN-13, título, autor).
-2. **Persistencia del Carrito de Compras y Favoritos:**
-   - Resuelve el problema de mantener un historial de artículos guardados para más tarde (_wishlists_) y carritos de compras activos por usuario, facilitando la conversión de ventas.
+Entre sus principales objetivos se encuentran:
 
-3. **Inmutabilidad y Trazabilidad de Ventas:**
-   - Evita inconsistencias históricas al separar las cabeceras de órdenes de compra (`compras`) de sus ítems específicos (`detalle_compras`). Registra el precio unitario exacto al momento de la transacción para proteger la integridad contable frente a futuros cambios de precios en el catálogo.
+1. **Administración del catálogo:** permite registrar y consultar libros, sus precios, stock e información bibliográfica.
+2. **Gestión de usuarios:** incorpora registro, autenticación, roles y administración del perfil personal.
+3. **Carrito y favoritos:** permite guardar libros de interés y gestionar los productos que se desean adquirir.
+4. **Registro de compras:** mantiene un historial de operaciones y sus respectivos detalles, conservando el precio de cada libro al momento de la compra.
+5. **Seguridad y trazabilidad:** utiliza contraseñas protegidas mediante hash, autenticación JWT y campos de auditoría para registrar determinadas operaciones.
 
-4. **Auditoría y Trazabilidad:**
-   - Incorpora campos de auditoría (`usuario_creador`, `usuario_delete`) para soportar bajas lógicas (_soft delete_) y tener un control de seguridad sobre las modificaciones realizadas por los distintos roles de usuario.
+---
+
+## 📋 Matriz de Evidencias de Requerimientos Mínimos
+
+La siguiente matriz identifica dónde se implementa cada requerimiento y qué evidencia permite comprobar su funcionamiento.
+
+Las capturas, GIF y videos se organizarán dentro de la carpeta `docs/evidencias/`, separados por requerimiento.
+
+| Requerimiento mínimo                | Estado      | Enlace al código / controladores                                                                                                                                                                                                                                                                       | Evidencia (captura / GIF / video)         |
+| ----------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| **1. Cuatro tablas y relación 1:N** | ✅ Cumplido | [AppDbContext.cs](Data/DataContext.cs) · [Models/](Models/)                                                                                                                                                                                                                                            | [DER] · `docs/DER.png/`                   |
+| **2. Login, roles y avatar**        | ✅ Cumplido | [AccountController.cs](Controllers/AccountController.cs) → API · [AuthController.cs](Controllers/AuthController.cs) → Vistas                                                                                                                                                                           | `docs/evidencias/02-login-roles-avatar/`  |
+| **3. Manejo de archivos (extra)**   | ✅ Cumplido | [AccountController.cs](Controllers/AccountController.cs) → `ActualizarAvatar()` · Carga y almacenamiento de avatares                                                                                                                                                                                   | `docs/evidencias/03-manejo-archivos/`     |
+| **4. ABM en Vue.js + AJAX**         | ✅ Cumplido | [LibrosController.cs](Controllers/LibrosController.cs) · [Index.cshtml](Views/Libros/Index.cshtml) · [Crear.cshtml](Views/Libros/Crear.cshtml) · [Editar.cshtml](Views/Libros/Editar.cshtml) · [Eliminar.cshtml](Views/Libros/Eliminar.cshtml) · [LibroRepository.cs](Repositories/LibroRepository.cs) | `docs/evidencias/04-abm-vue-ajax/`        |
+| **5. Paginado por servidor**        | ✅ Cumplido | [UsuariosController.cs](Controllers/UsuariosController.cs) → `Index()`                                                                                                                                                                                                                                 | `docs/evidencias/05-paginado-servidor/`   |
+| **6. Selección asíncrona (AJAX)**   | ✅ Cumplido | [CarritosController.cs](Controllers/CarritosController.cs) · [CarritoRepository.cs](Repositories/CarritoRepository.cs) · [ICarritoRepository.cs](Repositories/ICarritoRepository.cs) · [Index.cshtml](Views/Carritos/Index.cshtml)                                                                     | `docs/evidencias/06-seleccion-asincrona/` |
+| **7. Web API + JWT**                | ✅ Cumplido | [AccountController.cs](Controllers/AccountController.cs)                                                                                                                                                                                                                                               | `docs/evidencias/07-api-jwt/`             |
+
+**Referencias de estado:**
+
+- ✅ Cumplido: funcionalidad implementada.
+- 🟡 En proceso: implementación parcial o pendiente de completar.
+- ⬜ Pendiente: falta implementar o documentar la evidencia correspondiente.
+
+> Los estados y las rutas de la matriz deben actualizarse según la implementación final y los archivos reales del repositorio. Los enlaces relativos son orientativos y deben ajustarse si la estructura del proyecto utiliza otras rutas.
+
+---
+
+## 📁 Organización de las evidencias
+
+Se propone organizar las evidencias de la entrega de la siguiente manera:
+
+```text
+docs/
+├── evidencias/
+│   ├── 01-modelo-relacional/
+│   │   ├── diagrama-der.png
+│   │   └── relaciones.png
+│   │
+│   ├── 02-login-roles-avatar/
+│   │   ├── login.png
+│   │   ├── perfil-avatar.png
+│   │   └── roles.png
+│   │
+│   ├── 03-manejo-archivos/
+│   │   └── carga-avatar.gif
+│   │
+│   ├── 04-abm-vue-ajax/
+│   │   └── abm-dinamico.gif
+│   │
+│   ├── 05-paginado-servidor/
+│   │   └── paginado-red.png
+│   │
+│   ├── 06-seleccion-asincrona/
+│   │   └── seleccion-ajax.gif
+│   │
+│   └── 07-api-jwt/
+│       └── autenticacion-postman.png
+```
+
+Los nombres de los archivos son ejemplos. Se pueden reemplazar por las capturas y grabaciones reales de cada funcionalidad.
+
+---
 
 ## 📋 Listado y Descripción de Entidades
 
@@ -34,29 +97,11 @@ En las plataformas de comercio electrónico orientadas al sector editorial o mar
 - **`libros`**: Contiene el inventario de productos. Cada libro está vinculado obligatoriamente a un usuario a través de `vendedor_id`, lo que permite que múltiples usuarios ofrezcan libros de forma independiente. Registra datos bibliográficos, stock, precios y estados.
 - **`limagenLibro`**: Almacena las rutas digitales (`path`) de las fotografías asociadas a cada libro, permitiendo gestionar una galería por producto y definir cuál actúa como imagen principal.
 - **`carrito`**: Tabla temporal que asocia a un usuario con los libros que desea adquirir, registrando la cantidad y la fecha en que se agregaron antes de proceder al pago.
-- **`favorito`**: Gestiona la lista de deseos (_wishlist_) de los usuarios, relacionando qué libros han marcado como de su interés.
+- **`favorito`**: Gestiona la lista de deseos (_wishlists_) de los usuarios, relacionando qué libros han marcado como de su interés.
 - **`compras`**: Actúa como el registro maestro de cada transacción de compra finalizada, vinculando al usuario comprador con la fecha en que se efectuó la orden.
 - **`detalle_compras`**: Desglosa de manera granular cada orden de compra. Almacena qué libros específicos se compraron, la cantidad, los puntos generados y el **precio unitario histórico** al momento de la transacción.
 
 ---
-
-## 🔗 Descripción de Relaciones (No Triviales)
-
-- **`usuarios` ↔ `libros` (Modelo Marketplace / Vendedor):**
-  - Un usuario de la plataforma puede publicar y gestionar muchos libros para la venta (`vendedor_id`).
-  - Adicionalmente, las llaves de auditoría (`usuario_creador`, `usuario_delete`) conectan con la tabla de usuarios para mantener trazabilidad sobre quién registró o dio de baja lógica un libro en el sistema.
-
-- **`usuarios` ↔ `compras` (Modelo Comprador):**
-  - Un usuario, en su rol de cliente, puede realizar múltiples transacciones u órdenes de compra a lo largo del tiempo. Esto demuestra que **el mismo usuario que vende productos en la plataforma también puede comprar otros**.
-
-- **`libros` ↔ `limagenLibro` (1 a N):**
-  - Un libro ofertado por un usuario vendedor puede tener asociadas múltiples imágenes de galería, pero cada imagen pertenece a un único libro.
-
-- **`usuarios` ↔ `libros` a través de `carrito` y `favorito` (Muchos a Muchos):**
-  - Tablas intermedias que permiten a cualquier usuario gestionar su carro de compras y su lista de deseos de forma independiente al hecho de que él mismo también sea vendedor.
-
-- **`compras` ↔ `detalle_compras` (1 a N):**
-  - Relación maestro-detalle. Una compra general agrupa uno o varios ítems específicos en el detalle, permitiendo procesar transacciones que incluyan libros de diferentes vendedores en una sola orden.
 
 ## 🔐 Configuración local con User Secrets
 
@@ -132,3 +177,15 @@ El script evita insertar nuevamente las cuentas si sus correos ya existen.
 dotnet restore
 dotnet run
 ```
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+- **Backend:** ASP.NET Core MVC / C#
+- **Base de datos:** MySQL / TiDB
+- **ORM:** Entity Framework Core
+- **Proveedor de base de datos:** Pomelo.EntityFrameworkCore.MySql
+- **Autenticación:** JWT y BCrypt
+- **Frontend:** HTML, CSS, Bootstrap y JavaScript
+- **Interactividad:** Vue.js y AJAX

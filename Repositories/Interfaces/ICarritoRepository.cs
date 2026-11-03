@@ -4,4 +4,5 @@ public interface ICarritoRepository : IRepository<Carrito>
 {
 	abstract Task<List<Carrito>> ObtenerPorUsuarioId(int user_id);
 	abstract Task<List<Carrito>> ObtenerPorUsuario(Usuario usuario);
+	Task<List<Carrito>> BuscarPorUsuarioYTitulo(int usuarioId, string titulo);
 }
