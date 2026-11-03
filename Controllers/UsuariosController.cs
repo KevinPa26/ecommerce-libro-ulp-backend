@@ -172,6 +172,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                 }
             }
 
+            TempData["Mensaje"] = "El usuario fue creado correctamente.";
             return View(usuario);
         }
 
@@ -248,6 +249,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     await _usuarioRepository.Modificar(usuario);
                     _logger.LogInformation("Usuario con ID {Id} actualizado correctamente.", id);
 
+                    TempData["Mensaje"] = "El usuario fue actualizado correctamente.";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -286,6 +288,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     _logger.LogInformation("Usuario con ID {UsuarioId} eliminado.", id);
                 }
 
+                TempData["Mensaje"] = "El usuario fue dado de baja correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -312,9 +315,6 @@ namespace ecommerce_libro_ulp_backend.Controllers
             return Ok(new { ruta = "/images/default-avatar.svg" });
         }
 
-        // =========================================================================
-        // MÉTODO AUXILIAR REUTILIZABLE PARA VALIDAR Y GUARDAR EL AVATAR
-        // =========================================================================
         private async Task<(bool esValido, string mensajeError, string rutaRelativa)> ProcesarYGuardarAvatarAsync(IFormFile archivo, string emailUsuario)
         {
             // 1. Validar Tamaño máximo (2 MB)

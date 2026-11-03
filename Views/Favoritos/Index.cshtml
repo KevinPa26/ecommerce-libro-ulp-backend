@@ -51,7 +51,7 @@
 									}
 								</td>
 								<td class="text-end">
-									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos" v-on:click="quitar(@favorito.UsuarioId, @favorito.LibroId)">
+									<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar @favorito.Libro.Titulo de favoritos" v-on:click="quitar(@favorito.UsuarioId, @favorito.LibroId, '@favorito.Libro.Titulo')">
 										<i class="bi bi-trash3 me-1" aria-hidden="true"></i>Quitar
 									</button>
 								</td>
@@ -69,7 +69,17 @@
 	<script>
 		Vue.createApp({
 			methods: {
-				async quitar(usuarioId, libroId) {
+				async quitar(usuarioId, libroId, tituloLibro) {
+					console.log(usuarioId)
+					console.log(libroId)
+					console.log(tituloLibro)
+					const confirmado = await window.alerta.confirmar(
+                        '¿Quitar de favoritos?', 
+                        `¿Estás seguro de que deseas eliminar "${tituloLibro}" de tus favoritos?`,
+                        'Sí, quitar'
+                    );
+                    if (!confirmado) return;
+
 					const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
 					const form = new URLSearchParams();
 					form.append("usuarioId", usuarioId);
@@ -87,13 +97,16 @@
 						});
 
 						if (response.ok) {
-							window.location.reload();
+							window.alerta.toast('El libro ha sido eliminado de tus favoritos.', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
 						} else {
 							throw new Error(`Error ${response.status}`);
 						}
 					} catch (error) {
 						console.error(error);
-						alert("No se pudo quitar de favoritos: " + error.message);
+						window.alerta.error('Atención', "No se pudo quitar de favoritos: " + error.message);
 					}
 				}
 			}

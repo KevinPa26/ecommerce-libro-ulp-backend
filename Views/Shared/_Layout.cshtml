@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ecommerce_libro_ulp_backend.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
@@ -404,6 +405,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         
@@ -497,6 +499,63 @@
             });
 
         actualizarMenu();
+
+        window.alerta = {
+            // 1. Éxito (reemplaza alertas simples de éxito)
+            exito(titulo, mensaje) {
+                return Swal.fire({
+                    icon: 'success',
+                    title: titulo,
+                    text: mensaje,
+                    confirmButtonColor: '#0d6efd' // Color primario de Bootstrap
+                });
+            },
+
+            // 2. Error (reemplaza alertas simples de error)
+            error(titulo, mensaje) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: titulo,
+                    text: mensaje,
+                    confirmButtonColor: '#dc3545' // Color danger de Bootstrap
+                });
+            },
+
+            // 3. Confirmación (¡EL GRAN REEMPLAZO DEL confirm() NATIVO!)
+            // Devuelve una promesa (true si acepta, false si cancela)
+            async confirmar(titulo, mensaje, textoBotonConfirmar = 'Sí, confirmar') {
+                const resultado = await Swal.fire({
+                    icon: 'warning',
+                    title: titulo,
+                    text: mensaje,
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: textoBotonConfirmar,
+                    cancelButtonText: 'Cancelar'
+                });
+                return resultado.isConfirmed;
+            },
+
+            // 4. Notificación flotante / Toast (ideal para "Agregado al carrito" sin estorbar)
+            toast(mensaje, icono = 'success') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: icono,
+                    title: mensaje
+                });
+            }
+        };
     })();
 
     </script>

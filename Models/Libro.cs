@@ -27,9 +27,11 @@ namespace ecommerce_libro_ulp_backend.Models
         [StringLength(100, ErrorMessage = "El nombre del autor no puede superar los 100 caracteres.")]
         public string Autor { get; set; } = string.Empty;
 
+        [StringLength(3000, ErrorMessage = "La descripción del Vendedor no puede superar los 3000 caracteres.")]
         [Column("descripcion_vendedor")]
         public string? DescripcionVendedor { get; set; }
 
+        [StringLength(3000, ErrorMessage = "La descripción general no puede superar los 3000 caracteres.")]
         [Column("descripcion_libro")]
         public string? DescripcionLibro { get; set; }
 
@@ -39,8 +41,8 @@ namespace ecommerce_libro_ulp_backend.Models
         public decimal Precio { get; set; }
 
         [Required(ErrorMessage = "El stock es obligatorio.")]
-        [Range(0, int.MaxValue, ErrorMessage = "El stock no puede ser un valor negativo.")]
-        public int Stock { get; set; } = 0;
+        [Range(1, int.MaxValue, ErrorMessage = "El stock no puede ser un valor negativo.")]
+        public int Stock { get; set; } = 1;
 
         [Required(ErrorMessage = "El estado del libro es obligatorio.")]
         public EstadoLibro Estado { get; set; } = EstadoLibro.DISPONIBLE;

@@ -27,7 +27,7 @@
                 </div>
                 <div class="card-body p-4">
                     <!-- Formulario con enctype para soportar archivos múltiples -->
-                    <form asp-action="Crear" method="post" enctype="multipart/form-data" @@submit="validarFormulario">
+                    <form asp-action="Crear" method="post" enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
 
                         <!-- Campo oculto para el VendedorId (asignado automáticamente desde el usuario logueado en el backend) -->
@@ -79,7 +79,7 @@
                                 <label asp-for="Stock" class="form-label fw-bold">Stock Inicial *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-boxes"></i></span>
-                                    <input asp-for="Stock" type="number" min="0" v-model.number="form.stock" class="form-control" required />
+                                    <input asp-for="Stock" type="number" min="1" v-model.number="form.stock" class="form-control" required />
                                 </div>
                                 <span asp-validation-for="Stock" class="text-danger small"></span>
                             </div>
@@ -209,24 +209,6 @@
                 // Si se eliminan todas, limpiamos el input file del DOM
                 if (this.archivosSeleccionados.length === 0) {
                     document.getElementById('archivosFotos').value = '';
-                }
-            },
-            validarFormulario(e) {
-                if (!this.form.titulo || !this.form.autor || !this.form.precio) {
-                    e.preventDefault();
-                    alert('Por favor complete los campos obligatorios (Título, Autor y Precio).');
-                    return;
-                }
-
-                if (this.archivosSeleccionados.length === 0) {
-                    e.preventDefault();
-                    alert('Debes subir obligatoriamente al menos 1 imagen del libro.');
-                    return;
-                }
-
-                if (this.archivosSeleccionados.length > 4) {
-                    e.preventDefault();
-                    alert('No puedes subir más de 4 imágenes.');
                 }
             }
         }

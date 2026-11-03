@@ -203,13 +203,12 @@
                 if (this.errorCantidad) return;
 
                 if (this.libro.Stock <= 0) {
-                    alert('Lo sentimos, este libro no tiene stock disponible.');
+                    window.alerta.error('Sin Stock','Lo sentimos, este libro no tiene stock disponible.');
                     return;
                 }
 
-                if (!confirm(`¿Confirmas la compra de ${this.cantidad} unidad(es) de "${this.libro.Titulo}"?`)) {
-                    return;
-                }
+                const confirmado = await window.alerta.confirmar('¿Confirmar compra?', `Estás a punto de comprar ${this.cantidad} unidad(es) de "${this.libro.Titulo}".`);
+                if (!confirmado) return;
 
                 this.procesando = true;
 
@@ -237,16 +236,16 @@
                     if (response.redirected) {
                         window.location.href = response.url;
                     } else if (response.ok) {
-                        alert('¡Compra realizada con éxito!');
+                        await window.alerta.exito('¡Compra Exitosa!', 'Tu pedido se ha procesado correctamente.');
                         window.location.href = '/Compras/Index';
                     } else {
                         const errorTexto = await response.text();
-                        alert('No se pudo procesar la compra: ' + errorTexto);
+                        window.alerta.error('Error', 'No se pudo procesar: ' + errorTexto);
                         this.procesando = false;
                     }
                 } catch (error) {
                     console.error('Error de red:', error);
-                    alert('Ocurrió un error al conectar con el servidor.');
+                    window.alerta.error('Error de red', 'Ocurrió un error al conectar con el servidor.');
                     this.procesando = false;
                 }
             },
@@ -256,7 +255,7 @@
 
                 const token = sessionStorage.getItem("jwt");
                 if (!token) {
-                    alert("Debés iniciar sesión para agregar el libro al carrito.");
+                    window.alerta.error('Login', "Debés iniciar sesión para agregar el libro al carrito.");
                     return;
                 }
 
@@ -270,12 +269,12 @@
                         10
                     );
                 } catch (e) {
-                    alert("No se pudo obtener el usuario de la sesión.");
+                    window.alerta.error('Login', "No se pudo obtener el usuario de la sesión.");
                     return;
                 }
 
                 if (!usuarioId) {
-                    alert("No se pudo identificar al usuario. Iniciá sesión nuevamente.");
+                    window.alerta.error('Login', "No se pudo identificar al usuario. Iniciá sesión nuevamente.");
                     return;
                 }
 
@@ -302,22 +301,22 @@
                 .then(async (response) => {
                     this.agregando = false;
                     if (response.ok) {
-                        alert(`"${this.libro.Titulo}" se agregó al carrito.`);
+                        window.alerta.toast(`Se agregaron ${this.cantidad} unidad(es) al carrito.`);
                     } else {
                         const texto = await response.text();
-                        throw new Error(texto || `Error ${response.status}`);
+                        @* throw new Error(texto || `Error ${response.status}`); *@
+                        window.alerta.error('Atención', texto || 'No se pudo agregar al carrito.');
                     }
                 })
                 .catch((error) => {
                     this.agregando = false;
-                    console.error(error);
-                    alert("No se pudo agregar el libro al carrito: " + error.message);
+                    window.alerta.error('Error', 'No se pudo conectar con el servidor.');
                 });
             },
             async toggleFavorito() {
                 const token = sessionStorage.getItem("jwt");
                 if (!token) {
-                    alert("Debés iniciar sesión para agregar el libro al carrito.");
+                    window.alerta.error('Login', "Debés iniciar sesión para agregar el libro al carrito.");
                     return;
                 }
 
@@ -331,12 +330,12 @@
                         10
                     );
                 } catch (e) {
-                    alert("No se pudo obtener el usuario de la sesión.");
+                    window.alerta.error('Login', "No se pudo obtener el usuario de la sesión.");
                     return;
                 }
 
                 if (!usuarioId) {
-                    alert("No se pudo identificar al usuario. Iniciá sesión nuevamente.");
+                    window.alerta.error('Login', "No se pudo identificar al usuario. Iniciá sesión nuevamente.");
                     return;
                 }
 
@@ -362,15 +361,16 @@
                 .then(async (response) => {
                     if (response.ok) {
                         this.esFavorito = !this.esFavorito;
-                        alert(this.esFavorito ? 'Agregado a tus favoritos.' : 'Eliminado de tus favoritos.');
+                        const mensaje = this.esFavorito ? 'Agregado a tus favoritos.' : 'Eliminado de tus favoritos.';
+                        window.alerta.toast(mensaje, 'info');
                     } else {
                         const texto = await response.text();
-                        throw new Error(texto || `Error ${response.status}`);
+                        @* throw new Error(texto || `Error ${response.status}`); *@
+                        window.alerta.error('Atención', texto || 'No se pudo agregar a tus favoritos.');
                     }
                 })
                 .catch((error) => {
-                    console.error(error);
-                    alert("No se pudo agregar el libro a favoritos: " + error.message);
+                    window.alerta.error('Error', 'No se pudo conectar con el servidor.');
                 });
                 
             }

@@ -116,7 +116,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
             // 2. Validar la cantidad de fotos (Mínimo 1, Máximo 4)
             if (archivosFotos == null || archivosFotos.Count < 1 || archivosFotos.Count > 4)
             {
-                ModelState.AddModelError("Fotos", "Debes subir obligatoriamente entre 1 y 4 fotografías del libro.");
+                ModelState.AddModelError("", "Debes subir obligatoriamente entre 1 y 4 fotografías del libro.");
             }
 
             if (ModelState.IsValid)
@@ -150,6 +150,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                         }
                     }
 
+                    TempData["Mensaje"] = "El libro fue creado correctamente.";
                     _logger.LogInformation("Libro con ID {Id} creado exitosamente con {Count} imágenes.", libro.Id, archivosFotos.Count);
                     return RedirectToAction(nameof(Index));
                 }
@@ -274,7 +275,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     }
 
                     _logger.LogInformation("Libro con ID {Id} actualizado exitosamente.", id);
-                    TempData["SuccessMessage"] = "¡Cambios guardados con éxito!";
+                    TempData["Mensaje"] = "El libro fue actualizado correctamente.";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -314,6 +315,7 @@ namespace ecommerce_libro_ulp_backend.Controllers
                     _logger.LogInformation("Libro con ID {LibroId} eliminado.", id);
                 }
 
+                 TempData["Mensaje"] = "El libro fue dado de baja correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
