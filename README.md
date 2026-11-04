@@ -37,7 +37,7 @@ Las capturas, GIF y videos se organizarán dentro de la carpeta `docs/evidencias
 
 | Requerimiento mínimo                | Estado      | Enlace al código / controladores                                                                                                                                                                                                                                                                       | Evidencia (captura / GIF / video)         |
 | ----------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| **1. Cuatro tablas y relación 1:N** | ✅ Cumplido | [AppDbContext.cs](Data/DataContext.cs) · [Models/](Models/)                                                                                                                                                                                                                                            | [DER] · `docs/DER.png/`                   |
+| **1. Cuatro tablas y relación 1:N** | ✅ Cumplido | [AppDbContext.cs](Data/DataContext.cs) · [Models/](Models/)                                                                                                                                                                                                                                            | [DER] · `docs/evidencias/01-modelo-relacional/Diagrama-der.png/`                   |
 | **2. Login, roles y avatar**        | ✅ Cumplido | [AccountController.cs](Controllers/AccountController.cs) → API · [AuthController.cs](Controllers/AuthController.cs) → Vistas                                                                                                                                                                           | `docs/evidencias/02-login-roles-avatar/`  |
 | **3. Manejo de archivos (extra)**   | ✅ Cumplido | [AccountController.cs](Controllers/AccountController.cs) → `ActualizarAvatar()` · Carga y almacenamiento de avatares                                                                                                                                                                                   | `docs/evidencias/03-manejo-archivos/`     |
 | **4. ABM en Vue.js + AJAX**         | ✅ Cumplido | [LibrosController.cs](Controllers/LibrosController.cs) · [Index.cshtml](Views/Libros/Index.cshtml) · [Crear.cshtml](Views/Libros/Crear.cshtml) · [Editar.cshtml](Views/Libros/Editar.cshtml) · [Eliminar.cshtml](Views/Libros/Eliminar.cshtml) · [LibroRepository.cs](Repositories/LibroRepository.cs) | `docs/evidencias/04-abm-vue-ajax/`        |
@@ -63,8 +63,7 @@ Se propone organizar las evidencias de la entrega de la siguiente manera:
 docs/
 ├── evidencias/
 │   ├── 01-modelo-relacional/
-│   │   ├── diagrama-der.png
-│   │   └── relaciones.png
+│   │   └── diagrama-der.png
 │   │
 │   ├── 02-login-roles-avatar/
 │   │   ├── login.png
