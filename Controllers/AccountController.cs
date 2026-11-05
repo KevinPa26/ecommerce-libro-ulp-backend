@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace ecommerce_libro_ulp_backend.Controllers;
 
@@ -251,7 +252,7 @@ public class AccountController : ControllerBase
     }
 
     // GET: api/account/me
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpGet("me")]
     public async Task<IActionResult> ObtenerPerfil()
     {
@@ -289,7 +290,7 @@ public class AccountController : ControllerBase
 
 
     // PUT: api/account/avatar
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpPut("avatar")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(3 * 1024 * 1024)]

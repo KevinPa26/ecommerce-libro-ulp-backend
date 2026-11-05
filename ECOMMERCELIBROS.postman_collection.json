@@ -1,0 +1,179 @@
+{
+  "info": {
+    "_postman_id": "d1619d87-bee7-4c7c-938d-e1d666b73290",
+    "name": "ECOMMERCELIBROS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "16277811",
+    "_collection_link": "https://go.postman.co/collection/16277811-d1619d87-bee7-4c7c-938d-e1d666b73290?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\":\"hernan@mail.com\",\r\n    \"password\":\"hernan123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5012/api/account/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5012",
+          "path": [
+            "api",
+            "account",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Perfil",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiSGVybsOhbiBHb256YWxvIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoiaGVybmFuQG1haWwuY29tIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVVNVQVJJTyIsImF2YXRhciI6Ii91cGxvYWRzL2F2YXRhcnMvZTJhMjE0MWY4MzU5NDlkODllOTk1MDk1ZGVmY2Y5MWQuanBnIiwibmJmIjoxNzkzOTA3MzAzLCJleHAiOjE3OTM5MTA5MDMsImlzcyI6ImVjb21tZXJjZS1saWJyby11bHAtYmFja2VuZCIsImF1ZCI6ImVjb21tZXJjZS1saWJyby11bHAtY2xpZW50In0.487k2VP_cDvWpaVswty3bipolvnEtQ7yk2ANMuRBmFw",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5012/api/account/me",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5012",
+          "path": [
+            "api",
+            "account",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Registro",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "Nombre",
+              "value": "Hernán",
+              "type": "text"
+            },
+            {
+              "key": "Email",
+              "value": "hernan14n@gmail.com",
+              "type": "text"
+            },
+            {
+              "key": "Password",
+              "value": "hernan123",
+              "type": "text"
+            },
+            {
+              "key": "ConfirmarPassword",
+              "value": "hernan123",
+              "type": "text"
+            },
+            {
+              "key": "Avatar",
+              "type": "file",
+              "src": [
+                "/C:/Users/hcons/OneDrive/Imágenes/Screenshots/a.jpg"
+              ]
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5012/api/account/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5012",
+          "path": [
+            "api",
+            "account",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ActualizarAvatar",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0fuy}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "uuid": "d722f56d-e161-4ad4-9a94-fcbda889519f",
+              "src": "/C:/Users/hcons/OneDrive/Imágenes/Screenshots/794104694_29418008927787787_4839304281999125863_n.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5012/api/account/avatar?avatar",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5012",
+          "path": [
+            "api",
+            "account",
+            "avatar"
+          ],
+          "query": [
+            {
+              "key": "avatar",
+              "value": null
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_secret_0fuy",
+      "secret": true
+    }
+  ]
+}
