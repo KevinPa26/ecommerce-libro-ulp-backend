@@ -224,8 +224,8 @@
             },
             async comprar() {
                 const detalles = this.carritosCompra.map(carrito => ({
-                    LibroId: carrito.LibroId,
-                    Cantidad: carrito.Cantidad
+                    LibroId: carrito.libroId,
+                    Cantidad: carrito.cantidad
                 }));
 
                 if (!detalles.length) {

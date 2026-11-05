@@ -41,9 +41,13 @@ namespace ecommerce_libro_ulp_backend.Controllers
             {
                 const int pageSize = 8;
 
-                if (page < 1)
-                    page = 1;
+                if (page < 1) page = 1;
 
+
+                if (!User.IsInRole("ADMIN"))
+                {
+                    estado = 0; 
+                }
                 
                 // Obtener libros filtrados y paginados.
                 var resultado = await _libroRepository.ObtenerTodos(
